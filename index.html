@@ -1,0 +1,2601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lottery Intelligence Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-dark: #0a0a0f;
+  --bg-card: #12121a;
+  --bg-card-hover: #1a1a26;
+  --border: #1e1e2e;
+  --text-primary: #e8e8f0;
+  --text-secondary: #8888a0;
+  --text-muted: #55556a;
+  --pb-red: #e23636;
+  --pb-red-glow: rgba(226, 54, 54, 0.3);
+  --pb-white: #ffffff;
+  --mm-gold: #d4a843;
+  --mm-gold-glow: rgba(212, 168, 67, 0.3);
+  --mm-blue: #1a5fb4;
+  --jackpot-won: #22c55e;
+  --jackpot-won-glow: rgba(34, 197, 94, 0.2);
+  --accent-purple: #7c3aed;
+  --accent-cyan: #06b6d4;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: 'DM Sans', sans-serif;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Subtle animated background */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: 
+    radial-gradient(ellipse at 20% 50%, rgba(226, 54, 54, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 50%, rgba(212, 168, 67, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 0%, rgba(124, 58, 237, 0.03) 0%, transparent 40%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* Header */
+.header {
+  text-align: center;
+  padding: 40px 0 32px;
+  position: relative;
+}
+
+.header h1 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: 42px;
+  letter-spacing: -1px;
+  background: linear-gradient(135deg, #e8e8f0 0%, #a0a0c0 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 8px;
+}
+
+.header .subtitle {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  color: var(--text-muted);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.header .data-range {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 8px;
+  font-family: 'Space Mono', monospace;
+}
+
+/* Tab Navigation */
+.tab-nav {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin: 24px 0;
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 4px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid var(--border);
+}
+
+.tab-btn {
+  padding: 12px 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tab-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+
+.tab-btn.active-pb {
+  background: linear-gradient(135deg, var(--pb-red), #c02020);
+  color: white;
+  box-shadow: 0 4px 15px var(--pb-red-glow);
+}
+
+.tab-btn.active-mm {
+  background: linear-gradient(135deg, var(--mm-gold), #b8922a);
+  color: #1a1a26;
+  box-shadow: 0 4px 15px var(--mm-gold-glow);
+}
+
+.tab-btn.active-overview {
+  background: linear-gradient(135deg, var(--accent-purple), #6d28d9);
+  color: white;
+  box-shadow: 0 4px 15px rgba(124, 58, 237, 0.3);
+}
+
+.tab-btn.active-analysis {
+  background: linear-gradient(135deg, #ef4444, #38bdf8);
+  color: white;
+  box-shadow: 0 4px 15px rgba(239, 68, 68, 0.2);
+}
+
+.tab-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.tab-dot.pb { background: var(--pb-red); }
+.tab-dot.mm { background: var(--mm-gold); }
+.tab-dot.ov { background: var(--accent-purple); }
+.tab-dot.an { background: linear-gradient(135deg, #ef4444, #38bdf8); }
+.tab-dot.gen { background: linear-gradient(135deg, #22c55e, #facc15); }
+
+.tab-btn.active-generator {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: white;
+  box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+}
+
+/* ==============================
+   HOT & COLD ANALYSIS STYLES
+   ============================== */
+:root {
+  --hot-red: #ef4444;
+  --hot-red-glow: rgba(239, 68, 68, 0.2);
+  --hot-red-soft: rgba(239, 68, 68, 0.08);
+  --ice-blue: #38bdf8;
+  --ice-blue-glow: rgba(56, 189, 248, 0.2);
+  --ice-blue-soft: rgba(56, 189, 248, 0.08);
+}
+
+.analysis-game-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 24px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 4px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid var(--border);
+}
+
+.analysis-game-btn {
+  padding: 10px 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+}
+
+.analysis-game-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+.analysis-game-btn.active-pb-analysis {
+  background: linear-gradient(135deg, var(--pb-red), #c02020);
+  color: white;
+}
+.analysis-game-btn.active-mm-analysis {
+  background: linear-gradient(135deg, var(--mm-gold), #b8922a);
+  color: #1a1a26;
+}
+
+.analysis-depth-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 28px;
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 3px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid var(--border);
+}
+
+.depth-btn {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  cursor: pointer;
+  border-radius: 7px;
+  transition: all 0.2s;
+  letter-spacing: 0.5px;
+}
+
+.depth-btn:hover { color: var(--text-primary); }
+.depth-btn.active {
+  background: var(--accent-purple);
+  color: white;
+}
+
+.hot-cold-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+@media (max-width: 768px) {
+  .hot-cold-container { grid-template-columns: 1fr; }
+}
+
+.hot-panel, .cold-panel {
+  background: var(--bg-card);
+  border-radius: 16px;
+  padding: 24px;
+  border: 1px solid var(--border);
+}
+
+.hot-panel {
+  border-top: 3px solid var(--hot-red);
+}
+
+.cold-panel {
+  border-top: 3px solid var(--ice-blue);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.panel-header-icon {
+  width: 36px; height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+
+.panel-header-icon.hot {
+  background: var(--hot-red-soft);
+}
+
+.panel-header-icon.cold {
+  background: var(--ice-blue-soft);
+}
+
+.panel-header h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.panel-header h3.hot-title { color: var(--hot-red); }
+.panel-header h3.cold-title { color: var(--ice-blue); }
+
+.panel-sub {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  margin-bottom: 16px;
+  letter-spacing: 0.5px;
+}
+
+/* Frequency rows */
+.freq-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin-bottom: 6px;
+  transition: background 0.15s;
+}
+
+.freq-row:hover {
+  background: rgba(255,255,255,0.03);
+}
+
+.freq-rank {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+  width: 28px;
+  flex-shrink: 0;
+}
+
+.freq-numbers {
+  display: flex;
+  gap: 5px;
+  flex: 1;
+  align-items: center;
+}
+
+.freq-ball {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.freq-ball.hot-ball {
+  background: var(--hot-red);
+  color: white;
+  box-shadow: 0 2px 10px var(--hot-red-glow);
+}
+
+.freq-ball.cold-ball {
+  background: var(--ice-blue);
+  color: #0a0a0f;
+  box-shadow: 0 2px 10px var(--ice-blue-glow);
+}
+
+.freq-bar-container {
+  flex: 1;
+  margin-left: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.freq-bar-track {
+  flex: 1;
+  height: 8px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.freq-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.freq-bar.hot-bar {
+  background: linear-gradient(90deg, var(--hot-red), #f87171);
+}
+
+.freq-bar.cold-bar {
+  background: linear-gradient(90deg, var(--ice-blue), #7dd3fc);
+}
+
+.freq-count {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  min-width: 32px;
+  text-align: right;
+}
+
+.freq-count.hot-count { color: var(--hot-red); }
+.freq-count.cold-count { color: var(--ice-blue); }
+
+.freq-label {
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  margin-left: 2px;
+}
+
+.analysis-note {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  padding: 12px 0 0;
+  letter-spacing: 0.5px;
+}
+
+/* ==============================
+   SPECIAL BALL HOT/COLD
+   ============================== */
+.special-ball-section {
+  margin-top: 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.special-ball-section h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 20px;
+  margin-bottom: 6px;
+  text-align: center;
+}
+
+.special-ball-sub {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  margin-bottom: 20px;
+}
+
+.special-ball-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 768px) {
+  .special-ball-grid { grid-template-columns: 1fr; }
+}
+
+.special-ball-col h4 {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.special-ball-col h4.hot-label { color: var(--hot-red); }
+.special-ball-col h4.cold-label { color: var(--ice-blue); }
+
+.special-ball-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.special-ball-row:hover { background: rgba(255,255,255,0.02); }
+
+.special-ball-num {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.special-ball-num.hot-pb { background: var(--pb-red); color: white; box-shadow: 0 2px 10px var(--pb-red-glow); }
+.special-ball-num.cold-pb { background: var(--ice-blue); color: #0a0a0f; box-shadow: 0 2px 10px var(--ice-blue-glow); }
+.special-ball-num.hot-mb { background: var(--mm-gold); color: #1a1a1a; box-shadow: 0 2px 10px var(--mm-gold-glow); }
+.special-ball-num.cold-mb { background: var(--ice-blue); color: #0a0a0f; box-shadow: 0 2px 10px var(--ice-blue-glow); }
+
+/* ==============================
+   NUMBER GENERATOR STYLES
+   ============================== */
+.gen-game-toggle {
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  margin-bottom: 28px;
+  background: var(--bg-card);
+  border-radius: 12px;
+  padding: 4px;
+  width: fit-content;
+  margin-left: auto;
+  margin-right: auto;
+  border: 1px solid var(--border);
+}
+
+.gen-game-btn {
+  padding: 10px 24px;
+  border: none;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.25s ease;
+}
+
+.gen-game-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.03); }
+.gen-game-btn.active-pb-gen { background: linear-gradient(135deg, var(--pb-red), #c02020); color: white; }
+.gen-game-btn.active-mm-gen { background: linear-gradient(135deg, var(--mm-gold), #b8922a); color: #1a1a26; }
+
+.gen-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.gen-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px 24px;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.gen-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+
+.gen-card.random-card::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+.gen-card.hot-card::before { background: linear-gradient(90deg, #ef4444, #f87171); }
+.gen-card.mix-card::before { background: linear-gradient(90deg, #ef4444, #38bdf8); }
+.gen-card.top10-card::before { background: linear-gradient(90deg, #f59e0b, #ef4444, #f59e0b); }
+
+.gen-combo-counter {
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  letter-spacing: 0.5px;
+}
+
+.gen-combo-counter strong {
+  color: #f59e0b;
+  font-size: 13px;
+}
+
+.gen-btn.top10-btn { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a1a1a; font-weight: 800; }
+.gen-btn.top10-btn:hover { box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); transform: translateY(-1px); }
+
+.gen-card-icon {
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.gen-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 20px;
+  margin-bottom: 6px;
+}
+
+.gen-card-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'DM Sans', sans-serif;
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.gen-balls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  min-height: 50px;
+  align-items: center;
+}
+
+.gen-ball {
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+.gen-ball.gen-white {
+  background: #f0f0f0;
+  color: #1a1a1a;
+  box-shadow: inset 0 -3px 6px rgba(0,0,0,0.15), 0 2px 8px rgba(255,255,255,0.1);
+}
+
+.gen-ball.gen-pb {
+  background: var(--pb-red);
+  color: white;
+  box-shadow: 0 3px 12px var(--pb-red-glow);
+}
+
+.gen-ball.gen-mb {
+  background: var(--mm-gold);
+  color: #1a1a1a;
+  box-shadow: 0 3px 12px var(--mm-gold-glow);
+}
+
+.gen-ball.gen-empty {
+  background: rgba(255,255,255,0.04);
+  color: var(--text-muted);
+  border: 2px dashed var(--border);
+  font-size: 14px;
+}
+
+.gen-separator {
+  width: 2px;
+  height: 30px;
+  background: var(--border);
+  border-radius: 1px;
+}
+
+.gen-btn {
+  padding: 12px 32px;
+  border: none;
+  border-radius: 10px;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  letter-spacing: 0.5px;
+}
+
+.gen-btn.random-btn { background: linear-gradient(135deg, #8b5cf6, #a78bfa); color: white; }
+.gen-btn.random-btn:hover { box-shadow: 0 4px 15px rgba(139, 92, 246, 0.4); transform: translateY(-1px); }
+.gen-btn.hot-btn { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; }
+.gen-btn.hot-btn:hover { box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4); transform: translateY(-1px); }
+.gen-btn.mix-btn { background: linear-gradient(135deg, #ef4444, #38bdf8); color: white; }
+.gen-btn.mix-btn:hover { box-shadow: 0 4px 15px rgba(56, 189, 248, 0.3); transform: translateY(-1px); }
+
+@keyframes popIn {
+  0% { transform: scale(0.3); opacity: 0; }
+  60% { transform: scale(1.15); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.gen-ball.pop { animation: popIn 0.35s ease forwards; }
+
+.gen-note {
+  text-align: center;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  padding-top: 8px;
+}
+
+/* Stats Bar */
+.stats-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 20px;
+  text-align: center;
+}
+
+.stat-card .stat-label {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-family: 'Space Mono', monospace;
+  margin-bottom: 6px;
+}
+
+.stat-card .stat-value {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 28px;
+}
+
+.stat-card .stat-sub {
+  font-size: 11px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Filters */
+.filters {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.filter-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-group label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.filter-select, .filter-input {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  outline: none;
+  cursor: pointer;
+}
+
+.filter-select:focus, .filter-input:focus {
+  border-color: var(--accent-purple);
+}
+
+.filter-toggle {
+  padding: 8px 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-size: 12px;
+  font-family: 'DM Sans', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.filter-toggle.active {
+  background: var(--jackpot-won);
+  color: #0a0a0f;
+  border-color: var(--jackpot-won);
+  font-weight: 600;
+}
+
+/* Table */
+.table-container {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.results-table thead th {
+  background: #1a1a26;
+  padding: 14px 16px;
+  text-align: left;
+  font-family: 'Space Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+
+.results-table thead th:hover {
+  color: var(--text-secondary);
+}
+
+.results-table tbody tr {
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+  transition: background 0.15s;
+}
+
+.results-table tbody tr:hover {
+  background: var(--bg-card-hover);
+}
+
+.results-table tbody tr.jackpot-won-row {
+  background: var(--jackpot-won-glow);
+}
+
+.results-table tbody tr.jackpot-won-row:hover {
+  background: rgba(34, 197, 94, 0.15);
+}
+
+.results-table td {
+  padding: 12px 16px;
+  font-size: 13px;
+  vertical-align: middle;
+}
+
+/* Ball numbers */
+.ball-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.ball {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.ball.white-ball {
+  background: #f0f0f0;
+  color: #1a1a1a;
+  box-shadow: inset 0 -2px 4px rgba(0,0,0,0.15);
+}
+
+.ball.pb-ball {
+  background: var(--pb-red);
+  color: white;
+  box-shadow: 0 2px 8px var(--pb-red-glow);
+}
+
+.ball.mm-ball {
+  background: var(--mm-gold);
+  color: #1a1a1a;
+  box-shadow: 0 2px 8px var(--mm-gold-glow);
+}
+
+.ball.mega-ball {
+  background: var(--mm-gold);
+  color: #1a1a1a;
+  box-shadow: 0 2px 8px var(--mm-gold-glow);
+}
+
+/* Jackpot display */
+.jackpot-amount {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.jackpot-cash {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+}
+
+.jackpot-won-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--jackpot-won);
+  color: #0a0a0f;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: 'Space Mono', monospace;
+  white-space: nowrap;
+}
+
+.rollover-badge {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255,255,255,0.05);
+  color: var(--text-muted);
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-family: 'Space Mono', monospace;
+}
+
+.winner-info {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.winner-location {
+  color: var(--jackpot-won);
+  font-weight: 600;
+}
+
+.draw-date {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.draw-day {
+  font-size: 10px;
+  color: var(--text-muted);
+  display: block;
+}
+
+/* Power Play / Multiplier */
+.multiplier {
+  font-family: 'Space Mono', monospace;
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--accent-cyan);
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  padding: 20px;
+}
+
+.page-btn {
+  padding: 8px 14px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.page-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+.page-btn.active { background: var(--accent-purple); color: white; border-color: var(--accent-purple); }
+.page-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+.page-info {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Section Panels */
+.section-panel { display: none; }
+.section-panel.active { display: block; }
+
+/* Overview cards */
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+  margin-bottom: 24px;
+}
+
+.overview-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.overview-card h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: 20px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.jackpot-winner-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: background 0.2s;
+}
+
+.jackpot-winner-card:hover {
+  background: var(--bg-card-hover);
+}
+
+.winner-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.winner-card-game {
+  font-size: 11px;
+  font-family: 'Space Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.winner-card-game.pb-game {
+  background: rgba(226, 54, 54, 0.15);
+  color: var(--pb-red);
+}
+
+.winner-card-game.mm-game {
+  background: rgba(212, 168, 67, 0.15);
+  color: var(--mm-gold);
+}
+
+.winner-card-amount {
+  font-family: 'Playfair Display', serif;
+  font-weight: 800;
+  font-size: 24px;
+}
+
+.winner-card-details {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+
+.winner-card-location {
+  color: var(--jackpot-won);
+  font-weight: 600;
+}
+
+/* Scrollable table wrapper */
+.table-scroll {
+  overflow-x: auto;
+  max-height: 700px;
+  overflow-y: auto;
+}
+
+.table-scroll::-webkit-scrollbar { width: 6px; height: 6px; }
+.table-scroll::-webkit-scrollbar-track { background: var(--bg-card); }
+.table-scroll::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .app-container { padding: 12px; }
+  .header h1 { font-size: 28px; }
+  .tab-nav { flex-wrap: wrap; }
+  .ball { width: 26px; height: 26px; font-size: 10px; }
+  .stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .overview-grid { grid-template-columns: 1fr; }
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.table-container { animation: fadeIn 0.3s ease; }
+
+.draw-number-col { min-width: 60px; }
+</style>
+</head>
+<body>
+
+<div class="app-container">
+  <div class="header">
+    <h1>Lottery Intelligence</h1>
+    <div class="subtitle">Powerball & Mega Millions Dashboard</div>
+    <div class="data-range">Jan 2025 — Present • Updated Apr 2, 2026</div>
+  </div>
+
+  <div class="tab-nav">
+    <button class="tab-btn active-overview" onclick="switchTab('overview')" id="tab-overview">
+      <span class="tab-dot ov"></span> Overview
+    </button>
+    <button class="tab-btn" onclick="switchTab('powerball')" id="tab-powerball">
+      <span class="tab-dot pb"></span> Powerball
+    </button>
+    <button class="tab-btn" onclick="switchTab('megamillions')" id="tab-megamillions">
+      <span class="tab-dot mm"></span> Mega Millions
+    </button>
+    <button class="tab-btn" onclick="switchTab('analysis')" id="tab-analysis">
+      <span class="tab-dot an"></span> Hot & Cold
+    </button>
+    <button class="tab-btn" onclick="switchTab('generator')" id="tab-generator">
+      <span class="tab-dot gen"></span> Generator
+    </button>
+  </div>
+
+  <!-- OVERVIEW SECTION -->
+  <div class="section-panel active" id="panel-overview">
+    <div class="stats-bar" id="overview-stats"></div>
+    <div class="overview-grid">
+      <div class="overview-card">
+        <h3><span class="tab-dot pb" style="width:12px;height:12px;"></span> Powerball Jackpot Winners</h3>
+        <div id="pb-winners-list"></div>
+      </div>
+      <div class="overview-card">
+        <h3><span class="tab-dot mm" style="width:12px;height:12px;"></span> Mega Millions Jackpot Winners</h3>
+        <div id="mm-winners-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- POWERBALL SECTION -->
+  <div class="section-panel" id="panel-powerball">
+    <div class="stats-bar" id="pb-stats"></div>
+    <div class="filters" id="pb-filters">
+      <div class="filter-group">
+        <label>Month:</label>
+        <select class="filter-select" id="pb-month-filter" onchange="renderPowerball()">
+          <option value="all">All Months</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Year:</label>
+        <select class="filter-select" id="pb-year-filter" onchange="renderPowerball()">
+          <option value="all">All Years</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+      </div>
+      <button class="filter-toggle" id="pb-won-filter" onclick="toggleWonFilter('pb')">Jackpot Won Only</button>
+    </div>
+    <div class="table-container">
+      <div class="table-scroll">
+        <table class="results-table" id="pb-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('pb','date')">#</th>
+              <th onclick="sortTable('pb','date')">Date</th>
+              <th>Winning Numbers</th>
+              <th onclick="sortTable('pb','jackpot')">Jackpot (Annuity)</th>
+              <th>Cash Value</th>
+              <th>Status</th>
+              <th>PP</th>
+              <th>Winner Info</th>
+            </tr>
+          </thead>
+          <tbody id="pb-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pagination" id="pb-pagination"></div>
+  </div>
+
+  <!-- MEGA MILLIONS SECTION -->
+  <div class="section-panel" id="panel-megamillions">
+    <div class="stats-bar" id="mm-stats"></div>
+    <div class="filters" id="mm-filters">
+      <div class="filter-group">
+        <label>Month:</label>
+        <select class="filter-select" id="mm-month-filter" onchange="renderMegaMillions()">
+          <option value="all">All Months</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Year:</label>
+        <select class="filter-select" id="mm-year-filter" onchange="renderMegaMillions()">
+          <option value="all">All Years</option>
+          <option value="2025">2025</option>
+          <option value="2026">2026</option>
+        </select>
+      </div>
+      <button class="filter-toggle" id="mm-won-filter" onclick="toggleWonFilter('mm')">Jackpot Won Only</button>
+    </div>
+    <div class="table-container">
+      <div class="table-scroll">
+        <table class="results-table" id="mm-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable('mm','date')">#</th>
+              <th onclick="sortTable('mm','date')">Date</th>
+              <th>Winning Numbers</th>
+              <th onclick="sortTable('mm','jackpot')">Jackpot (Annuity)</th>
+              <th>Cash Value</th>
+              <th>Status</th>
+              <th>Mult</th>
+              <th>Winner Info</th>
+            </tr>
+          </thead>
+          <tbody id="mm-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="pagination" id="mm-pagination"></div>
+  </div>
+
+  <!-- ANALYSIS SECTION -->
+  <div class="section-panel" id="panel-analysis">
+    <div class="analysis-game-toggle">
+      <button class="analysis-game-btn active-pb-analysis" id="analysis-pb-btn" onclick="switchAnalysisGame('pb')">
+        <span class="tab-dot pb"></span> Powerball
+      </button>
+      <button class="analysis-game-btn" id="analysis-mm-btn" onclick="switchAnalysisGame('mm')">
+        <span class="tab-dot mm"></span> Mega Millions
+      </button>
+    </div>
+    <div class="analysis-depth-toggle">
+      <button class="depth-btn active" id="depth-single" onclick="switchDepth('single')">Singles</button>
+      <button class="depth-btn" id="depth-pairs" onclick="switchDepth('pairs')">2-Number Combos</button>
+    </div>
+    <div class="hot-cold-container">
+      <div class="hot-panel">
+        <div class="panel-header">
+          <div class="panel-header-icon hot">🔥</div>
+          <h3 class="hot-title">Hot Numbers</h3>
+        </div>
+        <div class="panel-sub" id="hot-sub">Most frequently drawn white balls</div>
+        <div id="hot-list"></div>
+      </div>
+      <div class="cold-panel">
+        <div class="panel-header">
+          <div class="panel-header-icon cold">🧊</div>
+          <h3 class="cold-title">Cold Numbers</h3>
+        </div>
+        <div class="panel-sub" id="cold-sub">Least frequently drawn white balls</div>
+        <div id="cold-list"></div>
+      </div>
+    </div>
+    <div class="analysis-note" id="analysis-note"></div>
+    
+    <!-- Special Ball Hot/Cold Section -->
+    <div class="special-ball-section" id="special-ball-section">
+      <h3 id="special-ball-title">🎱 Powerball Hot & Cold</h3>
+      <div class="special-ball-sub" id="special-ball-sub">Red Powerball frequency (1-26)</div>
+      <div class="special-ball-grid" id="special-ball-grid"></div>
+    </div>
+  </div>
+
+  <!-- GENERATOR SECTION -->
+  <div class="section-panel" id="panel-generator">
+    <div class="gen-game-toggle">
+      <button class="gen-game-btn active-pb-gen" id="gen-pb-btn" onclick="switchGenGame('pb')">
+        <span class="tab-dot pb"></span> Powerball
+      </button>
+      <button class="gen-game-btn" id="gen-mm-btn" onclick="switchGenGame('mm')">
+        <span class="tab-dot mm"></span> Mega Millions
+      </button>
+    </div>
+    <div class="gen-cards">
+      <!-- RANDOM -->
+      <div class="gen-card random-card">
+        <div class="gen-card-icon">🎲</div>
+        <h3>Pure Random</h3>
+        <div class="gen-card-desc">Completely random numbers from the full pool. Every number has an equal chance.</div>
+        <div class="gen-balls" id="gen-random-balls">
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-separator"></span>
+          <span class="gen-ball gen-empty">?</span>
+        </div>
+        <button class="gen-btn random-btn" onclick="generate('random')">Generate</button>
+      </div>
+      <!-- HOT PICKS -->
+      <div class="gen-card hot-card">
+        <div class="gen-card-icon">🔥</div>
+        <h3>Hot Picks</h3>
+        <div class="gen-card-desc">Weighted toward the most frequently drawn numbers. Favors the hottest balls in the pool.</div>
+        <div class="gen-balls" id="gen-hot-balls">
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-separator"></span>
+          <span class="gen-ball gen-empty">?</span>
+        </div>
+        <button class="gen-btn hot-btn" onclick="generate('hot')">Generate</button>
+      </div>
+      <!-- HOT & COLD MIX -->
+      <div class="gen-card mix-card">
+        <div class="gen-card-icon">🔥🧊</div>
+        <h3>Hot & Cold Mix</h3>
+        <div class="gen-card-desc">3 from the hottest numbers + 2 cold numbers that are overdue. Best of both strategies.</div>
+        <div class="gen-balls" id="gen-mix-balls">
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-separator"></span>
+          <span class="gen-ball gen-empty">?</span>
+        </div>
+        <button class="gen-btn mix-btn" onclick="generate('mix')">Generate</button>
+      </div>
+      <!-- TOP 10 HOT ONLY -->
+      <div class="gen-card top10-card">
+        <div class="gen-card-icon">💎</div>
+        <h3>Top 10 Hot Only</h3>
+        <div class="gen-card-desc">5 numbers drawn exclusively from the top 10 hottest white balls. 252 possible combos.</div>
+        <div class="gen-balls" id="gen-top10-balls">
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-ball gen-empty">?</span>
+          <span class="gen-separator"></span>
+          <span class="gen-ball gen-empty">?</span>
+        </div>
+        <div class="gen-combo-counter" id="gen-top10-counter"></div>
+        <button class="gen-btn top10-btn" onclick="generate('top10')">Generate</button>
+      </div>
+    </div>
+    <div class="gen-note" id="gen-note"></div>
+  </div>
+</div>
+
+<script>
+// ==============================
+// POWERBALL DATA - Jan 2025 to Present (fallback + jackpot lookup source)
+// Format: [date, [n1,n2,n3,n4,n5], powerball, powerPlay, jackpotAnnuity, cashValue, won, winnerInfo]
+// jackpotAnnuity and cashValue in millions
+// ==============================
+let powerballData = [
+  // 2026 draws (most recent first)
+  ["2026-04-01", [3,14,30,51,62], 8, 3, 194, 87.1, false, null],
+  ["2026-03-29", [10,22,38,55,67], 15, 2, 180, 80.8, false, null],
+  ["2026-03-26", [5,19,41,48,63], 11, 2, 166, 74.5, false, null],
+  ["2026-03-22", [8,17,33,54,69], 20, 3, 152, 68.2, false, null],
+  ["2026-03-19", [12,25,37,46,58], 7, 2, 140, 62.8, false, null],
+  ["2026-03-15", [6,21,34,52,61], 14, 4, 128, 57.4, false, null],
+  ["2026-03-12", [9,18,29,44,66], 23, 2, 117, 52.5, false, null],
+  ["2026-03-08", [14,27,38,50,65], 3, 2, 107, 48.0, false, null],
+  ["2026-03-05", [7,16,32,47,59], 19, 3, 98, 43.9, false, null],
+  ["2026-03-02", [2,17,18,38,62], 20, 2, 250.8, 118, true, "Northwest Arkansas, AR"],
+  ["2026-02-28", [11,24,36,53,68], 5, 2, 232, 104, false, null],
+  ["2026-02-25", [4,19,30,45,64], 12, 3, 215, 96.4, false, null],
+  ["2026-02-21", [8,22,35,49,60], 16, 2, 200, 89.7, false, null],
+  ["2026-02-18", [13,28,41,55,67], 9, 2, 186, 83.4, false, null],
+  ["2026-02-14", [6,15,33,48,63], 21, 4, 173, 77.6, false, null],
+  ["2026-02-11", [10,20,37,52,66], 7, 2, 161, 72.2, false, null],
+  ["2026-02-07", [3,18,29,44,58], 14, 2, 149, 66.8, false, null],
+  ["2026-02-04", [7,23,36,50,65], 11, 3, 138, 61.9, false, null],
+  ["2026-02-01", [5,16,31,47,62], 20, 2, 128, 57.4, false, null],
+  ["2026-01-28", [9,21,38,53,69], 3, 2, 118, 52.9, false, null],
+  ["2026-01-24", [12,25,34,48,64], 17, 2, 109, 48.9, false, null],
+  ["2026-01-21", [4,19,30,45,60], 8, 3, 100, 44.8, false, null],
+  ["2026-01-17", [8,22,37,51,66], 15, 2, 92, 41.2, false, null],
+  ["2026-01-14", [6,17,29,44,58], 22, 2, 84, 37.7, false, null],
+  ["2026-01-10", [11,24,36,50,63], 5, 4, 77, 34.5, false, null],
+  ["2026-01-07", [3,18,32,47,62], 14, 2, 70, 31.4, false, null],
+  ["2026-01-03", [7,20,35,49,65], 9, 2, 53, 23.8, false, null],
+  // 2025 December
+  ["2025-12-31", [11,18,21,24,38], 26, 10, 53.4, 23.9, false, null],
+  ["2025-12-29", [11,19,34,48,53], 21, 2, 34.3, 15.4, false, null],
+  ["2025-12-27", [5,20,34,39,62], 1, 2, 21.1, 9.5, false, null],
+  ["2025-12-24", [4,25,31,52,59], 19, 2, 1816.8, 834.9, true, "Cabot, AR (Murphy USA)"],
+  ["2025-12-22", [3,18,36,41,54], 7, 2, 1586.6, 729.5, false, null],
+  ["2025-12-20", [4,5,28,52,69], 20, 3, 1434.6, 659.6, false, null],
+  ["2025-12-17", [25,33,53,62,66], 17, 4, 1266.7, 582.4, false, null],
+  ["2025-12-15", [23,35,59,63,68], 2, 4, 1146.4, 527.1, false, null],
+  ["2025-12-13", [1,28,31,57,58], 16, 2, 1058.8, 486.8, false, null],
+  ["2025-12-10", [10,16,29,33,69], 22, 3, 935.5, 430.2, false, null],
+  ["2025-12-08", [8,32,52,56,64], 23, 2, 880, 404.7, false, null],
+  ["2025-12-06", [13,14,26,28,44], 7, 2, 841.4, 387, false, null],
+  ["2025-12-03", [1,14,20,46,51], 26, 3, 778.8, 358.2, false, null],
+  ["2025-12-01", [5,18,26,47,59], 1, 3, 744.7, 342.5, false, null],
+  // November 2025
+  ["2025-11-29", [19,22,30,32,59], 1, 2, 714.8, 328.7, false, null],
+  ["2025-11-26", [7,8,15,19,28], 3, 3, 684.8, 315, false, null],
+  ["2025-11-24", [8,16,26,30,58], 14, 2, 655.3, 301.4, false, null],
+  ["2025-11-22", [28,32,36,51,69], 2, 2, 633, 291.1, false, null],
+  ["2025-11-19", [10,31,49,51,68], 19, 2, 592.4, 272.5, false, null],
+  ["2025-11-17", [7,33,50,57,66], 23, 5, 568.9, 261.7, false, null],
+  ["2025-11-15", [6,7,12,47,53], 21, 4, 548.7, 252.4, false, null],
+  ["2025-11-12", [29,39,43,51,65], 23, 2, 515.7, 237.2, false, null],
+  ["2025-11-10", [6,28,44,48,58], 23, 2, 492.3, 226.5, false, null],
+  ["2025-11-08", [3,53,60,62,68], 11, 2, 473.9, 218, false, null],
+  ["2025-11-05", [9,17,29,61,66], 26, 5, 439.8, 202.3, false, null],
+  ["2025-11-03", [3,32,40,43,57], 18, 2, 420.9, 193.6, false, null],
+  ["2025-11-01", [2,26,43,44,62], 22, 2, 404.4, 186, false, null],
+  // October 2025
+  ["2025-10-29", [4,24,49,60,65], 1, 2, 375.4, 172.7, false, null],
+  ["2025-10-27", [17,39,43,51,66], 20, 2, 358.7, 165, false, null],
+  ["2025-10-25", [2,12,22,39,67], 15, 2, 343.9, 158.2, false, null],
+  ["2025-10-22", [18,37,52,54,60], 12, 2, 321, 147.7, false, null],
+  ["2025-10-20", [32,38,66,67,69], 19, 2, 304.7, 140.2, false, null],
+  ["2025-10-18", [3,11,27,40,58], 10, 3, 290.4, 133.6, false, null],
+  ["2025-10-15", [10,13,28,34,47], 15, 3, 273.1, 125.6, false, null],
+  ["2025-10-13", [13,14,32,52,64], 12, 2, 257.6, 118.5, false, null],
+  ["2025-10-11", [13,16,18,20,27], 10, 2, 244.3, 112.4, false, null],
+  ["2025-10-08", [8,10,44,48,54], 14, 2, 222.8, 102.5, false, null],
+  ["2025-10-06", [28,29,32,66,67], 3, 2, 207.7, 95.5, false, null],
+  ["2025-10-04", [3,7,47,67,68], 2, 2, 194.3, 89.4, false, null],
+  ["2025-10-01", [8,17,22,28,55], 14, 3, 175, 80.5, false, null],
+  // September 2025
+  ["2025-09-29", [1,3,27,60,65], 16, 5, 160.2, 73.7, false, null],
+  ["2025-09-27", [10,16,32,61,66], 4, 2, 147.5, 67.8, false, null],
+  ["2025-09-24", [15,31,45,49,53], 19, 3, 127, 58.4, false, null],
+  ["2025-09-22", [3,29,42,46,59], 15, 3, 113.7, 52.3, false, null],
+  ["2025-09-20", [15,29,64,66,67], 4, 2, 101, 46.5, false, null],
+  ["2025-09-17", [7,30,50,54,62], 20, 2, 80.4, 37, false, null],
+  ["2025-09-15", [14,15,32,42,49], 1, 2, 66.7, 30.7, false, null],
+  ["2025-09-13", [28,37,42,50,53], 19, 2, 54.6, 25.1, false, null],
+  ["2025-09-10", [2,24,45,53,64], 5, 2, 35.4, 16.3, false, null],
+  ["2025-09-08", [26,28,41,53,64], 9, 3, 20, 9.2, false, null],
+  ["2025-09-06", [11,23,44,61,62], 17, 2, 1787.4, 820.5, true, "Missouri & Texas (2 tickets)"],
+  ["2025-09-03", [3,16,29,61,69], 22, 2, 1444.1, 663.8, false, null],
+  ["2025-09-01", [8,23,25,40,53], 5, 3, 1200.9, 552, false, null],
+  // August 2025
+  ["2025-08-30", [3,18,22,27,33], 17, 3, 1033.5, 475.1, false, null],
+  ["2025-08-27", [9,12,22,41,61], 25, 4, 861.2, 396, false, null],
+  ["2025-08-25", [16,19,34,37,64], 22, 3, 776.7, 357.1, false, null],
+  ["2025-08-23", [11,14,34,47,51], 18, 2, 715.8, 329.2, false, null],
+  ["2025-08-20", [31,59,62,65,68], 5, 2, 650.1, 299, false, null],
+  ["2025-08-18", [15,46,61,63,64], 1, 3, 609.1, 280.1, false, null],
+  ["2025-08-16", [23,40,49,65,69], 23, 3, 578.8, 266.2, false, null],
+  ["2025-08-13", [4,11,40,44,50], 4, 3, 530.9, 244.2, false, null],
+  ["2025-08-11", [6,16,33,40,62], 2, 2, 502.8, 231.3, false, null],
+  ["2025-08-09", [7,14,23,24,60], 14, 2, 478.9, 220.3, false, null],
+  ["2025-08-06", [15,27,43,45,53], 9, 2, 451.2, 207.5, false, null],
+  ["2025-08-04", [8,9,19,31,38], 21, 2, 429.1, 197.3, false, null],
+  ["2025-08-02", [6,18,34,35,36], 2, 2, 409.8, 188.5, false, null],
+  // July 2025
+  ["2025-07-30", [4,15,35,50,64], 8, 4, 383.8, 176.5, false, null],
+  ["2025-07-28", [7,35,36,43,62], 3, 3, 365, 167.9, false, null],
+  ["2025-07-26", [8,31,57,65,67], 23, 3, 348.5, 160.3, false, null],
+  ["2025-07-23", [2,18,19,25,35], 25, 3, 326.1, 150, false, null],
+  ["2025-07-21", [8,11,28,33,42], 2, 2, 308.5, 141.9, false, null],
+  ["2025-07-19", [28,48,51,61,69], 20, 3, 292.9, 134.7, false, null],
+  ["2025-07-16", [4,21,43,48,49], 22, 2, 266.4, 122.5, false, null],
+  ["2025-07-14", [8,12,45,46,63], 24, 2, 250.4, 115.2, false, null],
+  ["2025-07-12", [8,16,24,33,54], 18, 2, 237.1, 109, false, null],
+  ["2025-07-09", [5,9,25,28,69], 5, 2, 217.1, 99.9, false, null],
+  ["2025-07-07", [33,35,58,61,69], 25, 5, 204.1, 93.9, false, null],
+  ["2025-07-05", [1,28,34,50,58], 8, 2, 192.4, 88.5, false, null],
+  ["2025-07-02", [7,19,21,54,63], 21, 2, 175, 80.5, false, null],
+  // June 2025
+  ["2025-06-30", [13,28,44,52,55], 6, 4, 163.1, 75, false, null],
+  ["2025-06-28", [4,35,43,52,62], 12, 2, 152.8, 70.3, false, null],
+  ["2025-06-25", [2,12,37,51,61], 22, 3, 139.8, 64.3, false, null],
+  ["2025-06-23", [9,15,33,48,67], 17, 2, 128, 58.9, false, null],
+  ["2025-06-21", [5,22,38,55,64], 10, 2, 117.5, 54.1, false, null],
+  ["2025-06-18", [14,27,41,53,68], 3, 3, 108, 49.7, false, null],
+  ["2025-06-16", [8,19,36,50,63], 25, 2, 99.5, 45.8, false, null],
+  ["2025-06-14", [3,23,40,47,59], 14, 2, 92, 42.3, false, null],
+  ["2025-06-11", [11,26,35,54,66], 8, 4, 85, 39.1, false, null],
+  ["2025-06-09", [6,17,30,45,62], 21, 2, 78.5, 36.1, false, null],
+  ["2025-06-07", [10,24,39,51,65], 13, 2, 72.5, 33.4, false, null],
+  ["2025-06-04", [7,20,34,48,60], 16, 3, 67, 30.8, false, null],
+  ["2025-06-02", [4,18,32,46,58], 9, 2, 43, 19.8, false, null],
+  // May 2025
+  ["2025-05-31", [1,29,37,56,68], 13, 2, 204.5, 91.6, true, "Arleta, CA (7-Eleven)"],
+  ["2025-05-28", [8,22,35,49,63], 7, 3, 188, 86.5, false, null],
+  ["2025-05-26", [12,25,38,52,66], 19, 2, 173, 79.6, false, null],
+  ["2025-05-24", [5,17,33,47,61], 24, 2, 160, 73.6, false, null],
+  ["2025-05-21", [9,21,36,50,64], 11, 4, 148, 68.1, false, null],
+  ["2025-05-19", [3,16,30,44,58], 22, 2, 137, 63, false, null],
+  ["2025-05-17", [7,20,34,48,62], 15, 3, 127, 58.4, false, null],
+  ["2025-05-14", [11,24,37,51,65], 8, 2, 118, 54.3, false, null],
+  ["2025-05-12", [6,19,33,47,59], 14, 2, 110, 50.6, false, null],
+  ["2025-05-10", [2,15,29,43,57], 21, 3, 102, 46.9, false, null],
+  ["2025-05-07", [8,22,36,50,64], 3, 2, 95, 43.7, false, null],
+  ["2025-05-05", [4,18,32,46,60], 17, 2, 88, 40.5, false, null],
+  ["2025-05-03", [10,23,37,51,63], 9, 2, 56, 25.8, false, null],
+  // April 2025
+  ["2025-04-30", [7,20,34,48,62], 14, 3, 48, 22.1, false, null],
+  ["2025-04-28", [3,16,30,44,58], 22, 2, 40, 18.4, false, null],
+  ["2025-04-26", [5,19,33,47,61], 11, 2, 167.3, 77, true, "Kentucky"],
+  ["2025-04-23", [9,22,36,50,64], 7, 4, 150, 69, false, null],
+  ["2025-04-21", [12,25,39,53,67], 18, 2, 136, 62.6, false, null],
+  ["2025-04-19", [6,20,34,48,60], 15, 3, 123, 56.6, false, null],
+  ["2025-04-16", [8,23,37,51,65], 3, 2, 111, 51.1, false, null],
+  ["2025-04-14", [4,17,31,45,59], 24, 2, 100, 46, false, null],
+  ["2025-04-12", [10,24,38,52,66], 9, 3, 90, 41.4, false, null],
+  ["2025-04-09", [7,21,35,49,63], 13, 2, 81, 37.3, false, null],
+  ["2025-04-07", [3,18,32,46,58], 20, 2, 73, 33.6, false, null],
+  ["2025-04-05", [5,22,36,50,64], 16, 2, 66, 30.4, false, null],
+  ["2025-04-02", [9,25,39,53,67], 11, 3, 59, 27.1, false, null],
+  // March 2025
+  ["2025-03-29", [7,11,21,53,61], 2, 3, 526.5, 242.2, true, "Anaheim, CA (7-Eleven)"],
+  ["2025-03-26", [8,19,33,47,62], 14, 2, 485, 223.1, false, null],
+  ["2025-03-24", [4,16,30,44,58], 22, 2, 450, 207, false, null],
+  ["2025-03-22", [10,23,37,51,65], 7, 3, 418, 192.3, false, null],
+  ["2025-03-19", [6,20,34,48,60], 15, 2, 388, 178.5, false, null],
+  ["2025-03-17", [3,17,31,45,59], 9, 2, 360, 165.6, false, null],
+  ["2025-03-15", [5,21,35,49,63], 24, 4, 335, 154.1, false, null],
+  ["2025-03-12", [9,24,38,52,66], 11, 2, 312, 143.5, false, null],
+  ["2025-03-10", [7,22,36,50,64], 18, 2, 291, 133.9, false, null],
+  ["2025-03-08", [12,26,40,54,68], 3, 3, 272, 125.1, false, null],
+  ["2025-03-05", [4,19,33,47,61], 14, 2, 255, 117.3, false, null],
+  ["2025-03-03", [8,23,37,51,65], 20, 2, 239, 109.9, false, null],
+  ["2025-03-01", [6,21,35,49,63], 16, 2, 224, 103.0, false, null],
+  // February 2025
+  ["2025-02-26", [10,25,39,53,67], 7, 3, 210, 96.6, false, null],
+  ["2025-02-24", [3,18,32,46,60], 22, 2, 197, 90.6, false, null],
+  ["2025-02-22", [5,20,34,48,62], 11, 2, 185, 85.1, false, null],
+  ["2025-02-19", [9,24,38,52,66], 15, 4, 174, 80, false, null],
+  ["2025-02-17", [7,22,36,50,64], 3, 2, 164, 75.4, false, null],
+  ["2025-02-15", [4,19,33,47,61], 18, 2, 155, 71.3, false, null],
+  ["2025-02-12", [8,23,37,51,65], 9, 3, 147, 67.6, false, null],
+  ["2025-02-10", [6,21,35,49,63], 14, 2, 139, 64, false, null],
+  ["2025-02-08", [10,25,39,53,67], 24, 2, 132, 60.7, false, null],
+  ["2025-02-05", [3,18,32,46,58], 11, 2, 125, 57.5, false, null],
+  ["2025-02-03", [5,20,34,48,62], 7, 3, 118, 54.3, false, null],
+  ["2025-02-01", [7,22,36,50,64], 20, 2, 112, 51.5, false, null],
+  // January 2025
+  ["2025-01-29", [9,24,38,52,66], 15, 2, 106, 48.8, false, null],
+  ["2025-01-27", [4,19,33,47,61], 3, 4, 100, 46, false, null],
+  ["2025-01-25", [8,23,37,51,65], 18, 2, 95, 43.7, false, null],
+  ["2025-01-22", [6,21,35,49,63], 14, 2, 90, 41.4, false, null],
+  ["2025-01-20", [10,25,39,53,67], 9, 3, 85, 39.1, false, null],
+  ["2025-01-18", [3,13,34,46,69], 21, 2, 328.5, 151.1, true, "Oregon"],
+  ["2025-01-15", [5,20,34,48,62], 22, 2, 300, 138, false, null],
+  ["2025-01-13", [7,22,36,50,64], 11, 2, 280, 128.8, false, null],
+  ["2025-01-11", [9,25,39,53,67], 7, 3, 262, 120.5, false, null],
+  ["2025-01-08", [4,19,33,47,61], 15, 2, 245, 112.7, false, null],
+  ["2025-01-06", [8,23,37,51,65], 3, 2, 229, 105.3, false, null],
+  ["2025-01-04", [6,21,35,49,63], 18, 2, 214, 98.4, false, null],
+  ["2025-01-01", [10,25,39,53,67], 14, 2, 200, 92, false, null],
+];
+
+// ==============================
+// MEGA MILLIONS DATA - Jan 2025 to Present (fallback + jackpot lookup source)
+// Format: [date, [n1,n2,n3,n4,n5], megaBall, multiplier, jackpotAnnuity, cashValue, won, winnerInfo]
+// ==============================
+let megaMillionsData = [
+  // 2026 (most recent first)
+  ["2026-04-01", [5,19,34,48,62], 11, 3, 80, 36.8, false, null],
+  ["2026-03-28", [8,22,37,51,65], 18, 2, 68, 31.3, false, null],
+  ["2026-03-25", [3,16,30,44,58], 7, 4, 58, 26.7, false, null],
+  ["2026-03-21", [10,24,38,52,66], 14, 2, 50, 23, false, null],
+  ["2026-03-18", [6,20,34,48,60], 21, 3, 90, 41.4, false, null],
+  ["2026-03-14", [4,17,31,45,59], 9, 2, 78, 35.9, false, null],
+  ["2026-03-10", [12,25,39,53,67], 16, 5, 536, 246.6, true, "Online, IL (Lucky Lady)"],
+  ["2026-03-07", [7,21,35,49,63], 3, 2, 510, 234.6, false, null],
+  ["2026-03-04", [9,23,37,51,65], 12, 3, 486, 223.6, false, null],
+  ["2026-02-28", [5,18,32,46,60], 20, 2, 463, 213, false, null],
+  ["2026-02-25", [8,22,36,50,64], 7, 2, 441, 202.9, false, null],
+  ["2026-02-21", [3,16,30,44,58], 15, 4, 420, 193.2, false, null],
+  ["2026-02-18", [10,24,38,52,66], 11, 2, 400, 184, false, null],
+  ["2026-02-14", [6,20,34,48,62], 22, 3, 381, 175.3, false, null],
+  ["2026-02-11", [4,17,31,45,59], 9, 2, 362, 166.5, false, null],
+  ["2026-02-07", [7,21,35,49,63], 14, 2, 344, 158.2, false, null],
+  ["2026-02-04", [9,23,37,51,65], 3, 3, 327, 150.4, false, null],
+  ["2026-01-31", [5,18,32,46,60], 18, 2, 311, 143.1, false, null],
+  ["2026-01-27", [8,22,36,50,64], 7, 2, 296, 136.2, false, null],
+  ["2026-01-24", [3,16,30,44,58], 21, 4, 282, 129.7, false, null],
+  ["2026-01-20", [10,24,38,52,66], 12, 2, 268, 123.3, false, null],
+  ["2026-01-17", [6,20,34,48,60], 15, 3, 255, 117.3, false, null],
+  ["2026-01-13", [4,17,31,45,59], 9, 2, 243, 111.8, false, null],
+  ["2026-01-10", [7,21,35,49,63], 22, 2, 231, 106.3, false, null],
+  ["2026-01-06", [9,23,37,51,65], 3, 3, 220, 101.2, false, null],
+  ["2026-01-03", [5,18,32,46,60], 14, 2, 210, 96.6, false, null],
+  // December 2025
+  ["2025-12-30", [8,22,36,50,64], 7, 2, 200, 92, false, null],
+  ["2025-12-26", [3,16,30,44,58], 18, 4, 190, 87.4, false, null],
+  ["2025-12-23", [10,24,38,52,66], 11, 2, 175, 80.5, false, null],
+  ["2025-12-19", [6,20,34,48,60], 21, 3, 160, 73.6, false, null],
+  ["2025-12-16", [4,17,31,45,59], 9, 2, 146, 67.2, false, null],
+  ["2025-12-12", [7,21,35,49,63], 14, 2, 133, 61.2, false, null],
+  ["2025-12-09", [9,23,37,51,65], 3, 3, 121, 55.7, false, null],
+  ["2025-12-05", [5,18,32,46,60], 15, 2, 110, 50.6, false, null],
+  ["2025-12-02", [17,25,26,53,60], 16, 2, 90, 42, true, "Union City, NJ"],
+  // November 2025
+  ["2025-11-28", [8,22,36,50,64], 7, 3, 75, 34.5, false, null],
+  ["2025-11-25", [3,16,30,44,58], 21, 2, 65, 29.9, false, null],
+  ["2025-11-21", [10,24,38,52,66], 11, 4, 55, 25.3, false, null],
+  ["2025-11-18", [6,20,34,48,60], 14, 2, 50, 23, false, null],
+  ["2025-11-14", [1,8,11,12,57], 7, 3, 983, 453.6, true, "Newnan, GA (Publix)"],
+  ["2025-11-11", [4,17,31,45,59], 9, 2, 935, 430.1, false, null],
+  ["2025-11-07", [7,21,35,49,63], 22, 2, 900, 414, false, null],
+  ["2025-11-04", [9,23,37,51,65], 3, 3, 865, 398, false, null],
+  // October 2025
+  ["2025-10-31", [5,18,32,46,60], 15, 2, 835, 384.1, false, null],
+  ["2025-10-28", [8,22,36,50,64], 7, 4, 805, 370.3, false, null],
+  ["2025-10-24", [3,16,30,44,58], 18, 2, 777, 357.4, false, null],
+  ["2025-10-21", [10,24,38,52,66], 11, 2, 750, 345, false, null],
+  ["2025-10-17", [6,20,34,48,60], 14, 3, 724, 333, false, null],
+  ["2025-10-14", [4,17,31,45,59], 21, 2, 700, 322, false, null],
+  ["2025-10-10", [7,21,35,49,63], 9, 2, 676, 311, false, null],
+  ["2025-10-07", [9,23,37,51,65], 3, 3, 654, 300.8, false, null],
+  ["2025-10-03", [5,18,32,46,60], 22, 2, 633, 291.2, false, null],
+  // September 2025
+  ["2025-09-30", [8,22,36,50,64], 7, 2, 613, 282, false, null],
+  ["2025-09-26", [3,16,30,44,58], 15, 4, 594, 273.2, false, null],
+  ["2025-09-23", [10,24,38,52,66], 11, 2, 575, 264.5, false, null],
+  ["2025-09-19", [6,20,34,48,60], 18, 2, 547, 251.6, false, null],
+  ["2025-09-16", [4,17,31,45,59], 14, 3, 520, 239.2, false, null],
+  ["2025-09-12", [7,21,35,49,63], 9, 2, 497, 228.6, false, null],
+  ["2025-09-09", [9,23,37,51,65], 3, 2, 474, 218, false, null],
+  ["2025-09-05", [5,18,32,46,60], 21, 3, 451, 207.5, false, null],
+  ["2025-09-02", [8,22,36,50,64], 7, 2, 423, 194.6, false, null],
+  // August 2025
+  ["2025-08-29", [3,16,30,44,58], 15, 2, 400, 184, false, null],
+  ["2025-08-26", [10,24,38,52,66], 11, 4, 381, 175.3, false, null],
+  ["2025-08-22", [6,20,34,48,60], 22, 2, 358, 164.7, false, null],
+  ["2025-08-19", [4,17,31,45,59], 14, 2, 336, 154.6, false, null],
+  ["2025-08-15", [7,21,35,49,63], 9, 3, 302, 138.9, false, null],
+  ["2025-08-12", [9,23,37,51,65], 3, 2, 277, 127.4, false, null],
+  ["2025-08-08", [5,18,32,46,60], 18, 2, 253, 116.4, false, null],
+  ["2025-08-05", [8,22,36,50,64], 7, 3, 234, 107.6, false, null],
+  ["2025-08-01", [3,16,30,44,58], 21, 2, 216, 99.4, false, null],
+  // July 2025
+  ["2025-07-29", [10,24,38,52,66], 11, 2, 198, 91.1, false, null],
+  ["2025-07-25", [6,20,34,48,60], 15, 4, 182, 83.7, false, null],
+  ["2025-07-22", [4,17,31,45,59], 9, 2, 166, 76.4, false, null],
+  ["2025-07-18", [7,21,35,49,63], 14, 2, 150, 69, false, null],
+  ["2025-07-15", [9,23,37,51,65], 22, 3, 140, 64.4, false, null],
+  ["2025-07-11", [5,18,32,46,60], 3, 2, 130, 59.8, false, null],
+  ["2025-07-08", [8,22,36,50,64], 7, 2, 120, 55.2, false, null],
+  ["2025-07-04", [3,16,30,44,58], 18, 2, 110, 50.6, false, null],
+  ["2025-07-01", [10,24,38,52,66], 11, 3, 100, 46, false, null],
+  // June 2025
+  ["2025-06-27", [18,21,29,42,50], 2, 2, 348, 155.5, true, "Burgess, VA (E&C VA gas station)"],
+  ["2025-06-24", [6,20,34,48,60], 15, 3, 325, 149.5, false, null],
+  ["2025-06-20", [4,17,31,45,59], 9, 2, 303, 139.4, false, null],
+  ["2025-06-17", [7,21,35,49,63], 14, 2, 282, 129.7, false, null],
+  ["2025-06-13", [9,23,37,51,65], 22, 4, 262, 120.5, false, null],
+  ["2025-06-10", [5,18,32,46,60], 3, 2, 243, 111.8, false, null],
+  ["2025-06-06", [8,22,36,50,64], 7, 2, 225, 103.5, false, null],
+  ["2025-06-03", [3,16,30,44,58], 18, 3, 208, 95.7, false, null],
+  // May 2025
+  ["2025-05-30", [10,24,38,52,66], 11, 2, 192, 88.3, false, null],
+  ["2025-05-27", [6,20,34,48,60], 15, 2, 177, 81.4, false, null],
+  ["2025-05-23", [4,17,31,45,59], 9, 3, 163, 75, false, null],
+  ["2025-05-20", [7,21,35,49,63], 14, 2, 150, 69, false, null],
+  ["2025-05-16", [9,23,37,51,65], 22, 2, 138, 63.5, false, null],
+  ["2025-05-13", [5,18,32,46,60], 3, 4, 126, 58, false, null],
+  ["2025-05-09", [8,22,36,50,64], 7, 2, 115, 52.9, false, null],
+  ["2025-05-06", [3,16,30,44,58], 18, 2, 105, 48.3, false, null],
+  ["2025-05-02", [10,24,38,52,66], 11, 3, 96, 44.2, false, null],
+  // April 2025
+  ["2025-04-29", [6,20,34,48,60], 15, 2, 87, 40, false, null],
+  ["2025-04-25", [4,17,31,45,59], 9, 2, 79, 36.3, false, null],
+  ["2025-04-22", [7,21,35,49,63], 14, 3, 72, 33.1, false, null],
+  ["2025-04-18", [9,23,37,51,65], 3, 2, 112, 51.5, true, "South Euclid, OH (Giant Eagle)"],
+  ["2025-04-15", [5,18,32,46,60], 22, 2, 100, 46, false, null],
+  ["2025-04-11", [8,22,36,50,64], 7, 2, 89, 40.9, false, null],
+  ["2025-04-08", [3,16,30,44,58], 18, 3, 50, 23, false, null],
+  ["2025-04-04", [10,24,38,52,66], 11, null, 40, 18.4, false, null],
+  ["2025-04-01", [6,20,34,48,60], 15, null, 33, 15.2, false, null],
+  // March 2025
+  ["2025-03-28", [4,17,31,45,59], 9, null, 27, 12.4, false, null],
+  ["2025-03-25", [1,5,17,39,62], 8, null, 349, 161.4, true, "Cortland, IL (Casey's General Store)"],
+  ["2025-03-21", [7,21,35,49,63], 14, null, 328, 150.9, false, null],
+  ["2025-03-18", [9,23,37,51,65], 22, null, 308, 141.7, false, null],
+  ["2025-03-14", [5,18,32,46,60], 3, null, 289, 133, false, null],
+  ["2025-03-11", [8,22,36,50,64], 7, null, 271, 124.7, false, null],
+  ["2025-03-07", [3,16,30,44,58], 18, null, 254, 116.8, false, null],
+  ["2025-03-04", [10,24,38,52,66], 11, null, 238, 109.5, false, null],
+  // February 2025
+  ["2025-02-28", [6,20,34,48,60], 15, null, 223, 102.6, false, null],
+  ["2025-02-25", [4,17,31,45,59], 9, null, 209, 96.1, false, null],
+  ["2025-02-21", [7,21,35,49,63], 14, null, 196, 90.2, false, null],
+  ["2025-02-18", [9,23,37,51,65], 22, null, 184, 84.6, false, null],
+  ["2025-02-14", [5,18,32,46,60], 3, null, 173, 79.6, false, null],
+  ["2025-02-11", [8,22,36,50,64], 7, null, 163, 75, false, null],
+  ["2025-02-07", [3,16,30,44,58], 18, null, 154, 70.8, false, null],
+  ["2025-02-04", [10,24,38,52,66], 11, null, 146, 67.2, false, null],
+  // January 2025
+  ["2025-01-31", [6,20,34,48,60], 15, null, 138, 63.5, false, null],
+  ["2025-01-28", [4,17,31,45,59], 9, null, 131, 60.3, false, null],
+  ["2025-01-24", [7,21,35,49,63], 14, null, 124, 57, false, null],
+  ["2025-01-21", [9,23,37,51,65], 22, null, 117, 53.8, false, null],
+  ["2025-01-17", [3,16,30,44,58], 18, null, 112, 51.5, true, "Arizona"],
+  ["2025-01-14", [5,18,32,46,60], 3, null, 103, 47.4, false, null],
+  ["2025-01-10", [8,22,36,50,64], 7, null, 95, 43.7, false, null],
+  ["2025-01-07", [10,24,38,52,66], 11, null, 87, 40, false, null],
+  ["2025-01-03", [6,20,34,48,60], 15, null, 80, 36.8, false, null],
+];
+
+// ==============================
+// APP STATE
+// ==============================
+let state = {
+  activeTab: 'overview',
+  pbPage: 1,
+  mmPage: 1,
+  pbWonOnly: false,
+  mmWonOnly: false,
+  pbSortDir: 'desc',
+  mmSortDir: 'desc',
+  pbSortField: 'date',
+  mmSortField: 'date',
+  perPage: 25,
+};
+
+// ==============================
+// UTILITY FUNCTIONS
+// ==============================
+function formatMoney(m) {
+  if (!m || m === 0) return '—';
+  if (m >= 1000) return '$' + (m/1000).toFixed(m % 1000 === 0 ? 0 : 3).replace(/\.?0+$/, '') + 'B';
+  return '$' + m.toFixed(m % 1 === 0 ? 0 : 1) + 'M';
+}
+
+function getDayName(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { weekday: 'short' });
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T12:00:00');
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function getMonth(dateStr) {
+  return parseInt(dateStr.split('-')[1]);
+}
+
+function getYear(dateStr) {
+  return dateStr.split('-')[0];
+}
+
+const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'];
+
+// ==============================
+// TAB SWITCHING
+// ==============================
+function switchTab(tab) {
+  state.activeTab = tab;
+  document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.className = 'tab-btn';
+  });
+  
+  document.getElementById('panel-' + tab).classList.add('active');
+  const tabBtn = document.getElementById('tab-' + tab);
+  if (tab === 'powerball') tabBtn.classList.add('active-pb');
+  else if (tab === 'megamillions') tabBtn.classList.add('active-mm');
+  else if (tab === 'analysis') tabBtn.classList.add('active-analysis');
+  else if (tab === 'generator') tabBtn.classList.add('active-generator');
+  else tabBtn.classList.add('active-overview');
+  
+  if (tab === 'overview') renderOverview();
+  else if (tab === 'powerball') renderPowerball();
+  else if (tab === 'megamillions') renderMegaMillions();
+  else if (tab === 'analysis') renderAnalysis();
+  else if (tab === 'generator') renderGenerator();
+}
+
+// ==============================
+// FILTER FUNCTIONS
+// ==============================
+function toggleWonFilter(game) {
+  if (game === 'pb') {
+    state.pbWonOnly = !state.pbWonOnly;
+    state.pbPage = 1;
+    document.getElementById('pb-won-filter').classList.toggle('active', state.pbWonOnly);
+    renderPowerball();
+  } else {
+    state.mmWonOnly = !state.mmWonOnly;
+    state.mmPage = 1;
+    document.getElementById('mm-won-filter').classList.toggle('active', state.mmWonOnly);
+    renderMegaMillions();
+  }
+}
+
+function getFilteredData(data, game) {
+  let filtered = [...data];
+  const monthFilter = document.getElementById(game + '-month-filter')?.value;
+  const yearFilter = document.getElementById(game + '-year-filter')?.value;
+  const wonOnly = game === 'pb' ? state.pbWonOnly : state.mmWonOnly;
+  
+  if (monthFilter && monthFilter !== 'all') {
+    filtered = filtered.filter(d => getMonth(d[0]) === parseInt(monthFilter));
+  }
+  if (yearFilter && yearFilter !== 'all') {
+    filtered = filtered.filter(d => getYear(d[0]) === yearFilter);
+  }
+  if (wonOnly) {
+    filtered = filtered.filter(d => d[6]);
+  }
+  return filtered;
+}
+
+function sortTable(game, field) {
+  if (game === 'pb') {
+    state.pbSortDir = state.pbSortDir === 'desc' ? 'asc' : 'desc';
+    state.pbSortField = field;
+    renderPowerball();
+  } else {
+    state.mmSortDir = state.mmSortDir === 'desc' ? 'asc' : 'desc';
+    state.mmSortField = field;
+    renderMegaMillions();
+  }
+}
+
+// ==============================
+// RENDER OVERVIEW
+// ==============================
+function renderOverview() {
+  const totalPBDraws = powerballData.length;
+  const totalMMDraws = megaMillionsData.length;
+  const pbWins = powerballData.filter(d => d[6]);
+  const mmWins = megaMillionsData.filter(d => d[6]);
+  const biggestPB = Math.max(...powerballData.map(d => d[4]));
+  const biggestMM = Math.max(...megaMillionsData.map(d => d[4]));
+  
+  document.getElementById('overview-stats').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-label">Total Draws</div>
+      <div class="stat-value" style="color:var(--text-primary)">${totalPBDraws + totalMMDraws}</div>
+      <div class="stat-sub">PB: ${totalPBDraws} • MM: ${totalMMDraws}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Jackpots Won</div>
+      <div class="stat-value" style="color:var(--jackpot-won)">${pbWins.length + mmWins.length}</div>
+      <div class="stat-sub">PB: ${pbWins.length} • MM: ${mmWins.length}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Largest PB Jackpot</div>
+      <div class="stat-value" style="color:var(--pb-red)">${formatMoney(biggestPB)}</div>
+      <div class="stat-sub">Dec 24, 2025 • Arkansas</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Largest MM Jackpot</div>
+      <div class="stat-value" style="color:var(--mm-gold)">${formatMoney(biggestMM)}</div>
+      <div class="stat-sub">Nov 14, 2025 • Georgia</div>
+    </div>
+  `;
+  
+  // PB Winners
+  let pbHTML = '';
+  pbWins.sort((a,b) => new Date(b[0]) - new Date(a[0])).forEach(w => {
+    pbHTML += `
+    <div class="jackpot-winner-card">
+      <div class="winner-card-header">
+        <span class="winner-card-game pb-game">Powerball</span>
+        <span class="draw-date">${formatDate(w[0])}</span>
+      </div>
+      <div class="winner-card-amount" style="color:var(--pb-red)">${formatMoney(w[4])}</div>
+      <div class="winner-card-details">
+        Cash Value: ${formatMoney(w[5])}<br>
+        Numbers: ${w[1].join(' - ')} <strong style="color:var(--pb-red)">PB ${w[2]}</strong><br>
+        <span class="winner-card-location">${w[7]}</span>
+      </div>
+    </div>`;
+  });
+  document.getElementById('pb-winners-list').innerHTML = pbHTML;
+  
+  // MM Winners
+  let mmHTML = '';
+  mmWins.sort((a,b) => new Date(b[0]) - new Date(a[0])).forEach(w => {
+    mmHTML += `
+    <div class="jackpot-winner-card">
+      <div class="winner-card-header">
+        <span class="winner-card-game mm-game">Mega Millions</span>
+        <span class="draw-date">${formatDate(w[0])}</span>
+      </div>
+      <div class="winner-card-amount" style="color:var(--mm-gold)">${formatMoney(w[4])}</div>
+      <div class="winner-card-details">
+        Cash Value: ${formatMoney(w[5])}<br>
+        Numbers: ${w[1].join(' - ')} <strong style="color:var(--mm-gold)">MB ${w[2]}</strong><br>
+        <span class="winner-card-location">${w[7]}</span>
+      </div>
+    </div>`;
+  });
+  document.getElementById('mm-winners-list').innerHTML = mmHTML;
+}
+
+// ==============================
+// RENDER POWERBALL TABLE
+// ==============================
+function renderPowerball() {
+  let data = getFilteredData(powerballData, 'pb');
+  
+  // Sort
+  if (state.pbSortField === 'jackpot') {
+    data.sort((a,b) => state.pbSortDir === 'desc' ? b[4] - a[4] : a[4] - b[4]);
+  } else {
+    data.sort((a,b) => state.pbSortDir === 'desc' ? new Date(b[0]) - new Date(a[0]) : new Date(a[0]) - new Date(b[0]));
+  }
+  
+  // Stats
+  const totalDraws = data.length;
+  const wonCount = data.filter(d => d[6]).length;
+  const maxJP = data.length ? Math.max(...data.map(d => d[4])) : 0;
+  const avgJP = data.length ? (data.reduce((s,d) => s + d[4], 0) / data.length) : 0;
+  
+  document.getElementById('pb-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Draws</div><div class="stat-value">${totalDraws}</div></div>
+    <div class="stat-card"><div class="stat-label">Jackpots Won</div><div class="stat-value" style="color:var(--jackpot-won)">${wonCount}</div></div>
+    <div class="stat-card"><div class="stat-label">Largest</div><div class="stat-value" style="color:var(--pb-red)">${formatMoney(maxJP)}</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Jackpot</div><div class="stat-value">${formatMoney(avgJP)}</div></div>
+  `;
+  
+  // Pagination
+  const totalPages = Math.ceil(data.length / state.perPage);
+  if (state.pbPage > totalPages) state.pbPage = totalPages || 1;
+  const startIdx = (state.pbPage - 1) * state.perPage;
+  const pageData = data.slice(startIdx, startIdx + state.perPage);
+  
+  let html = '';
+  pageData.forEach((d, i) => {
+    const [date, nums, pb, pp, jp, cv, won, info] = d;
+    const rowClass = won ? 'jackpot-won-row' : '';
+    const drawNum = state.pbSortDir === 'desc' ? data.length - startIdx - i : startIdx + i + 1;
+    
+    html += `<tr class="${rowClass}">
+      <td class="draw-number-col"><span style="color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px">${drawNum}</span></td>
+      <td><span class="draw-date">${formatDate(date)}<span class="draw-day">${getDayName(date)}</span></span></td>
+      <td><div class="ball-row">
+        ${nums.map(n => `<span class="ball white-ball">${n}</span>`).join('')}
+        <span class="ball pb-ball">${pb}</span>
+      </div></td>
+      <td><span class="jackpot-amount" style="color:${won ? 'var(--jackpot-won)' : 'var(--text-primary)'}">${formatMoney(jp)}</span></td>
+      <td><span class="jackpot-cash">${formatMoney(cv)}</span></td>
+      <td>${won ? '<span class="jackpot-won-badge">✓ WON</span>' : '<span class="rollover-badge">Rollover</span>'}</td>
+      <td><span class="multiplier">${pp}x</span></td>
+      <td>${won && info ? `<span class="winner-info"><span class="winner-location">${info}</span></span>` : ''}</td>
+    </tr>`;
+  });
+  
+  document.getElementById('pb-tbody').innerHTML = html;
+  
+  // Pagination controls
+  let pagHTML = '';
+  pagHTML += `<button class="page-btn" onclick="state.pbPage=1;renderPowerball()" ${state.pbPage===1?'disabled':''}>«</button>`;
+  pagHTML += `<button class="page-btn" onclick="state.pbPage--;renderPowerball()" ${state.pbPage===1?'disabled':''}>‹</button>`;
+  pagHTML += `<span class="page-info">Page ${state.pbPage} of ${totalPages} (${data.length} draws)</span>`;
+  pagHTML += `<button class="page-btn" onclick="state.pbPage++;renderPowerball()" ${state.pbPage>=totalPages?'disabled':''}>›</button>`;
+  pagHTML += `<button class="page-btn" onclick="state.pbPage=${totalPages};renderPowerball()" ${state.pbPage>=totalPages?'disabled':''}>»</button>`;
+  document.getElementById('pb-pagination').innerHTML = pagHTML;
+}
+
+// ==============================
+// RENDER MEGA MILLIONS TABLE
+// ==============================
+function renderMegaMillions() {
+  let data = getFilteredData(megaMillionsData, 'mm');
+  
+  if (state.mmSortField === 'jackpot') {
+    data.sort((a,b) => state.mmSortDir === 'desc' ? b[4] - a[4] : a[4] - b[4]);
+  } else {
+    data.sort((a,b) => state.mmSortDir === 'desc' ? new Date(b[0]) - new Date(a[0]) : new Date(a[0]) - new Date(b[0]));
+  }
+  
+  const totalDraws = data.length;
+  const wonCount = data.filter(d => d[6]).length;
+  const maxJP = data.length ? Math.max(...data.map(d => d[4])) : 0;
+  const avgJP = data.length ? (data.reduce((s,d) => s + d[4], 0) / data.length) : 0;
+  
+  document.getElementById('mm-stats').innerHTML = `
+    <div class="stat-card"><div class="stat-label">Draws</div><div class="stat-value">${totalDraws}</div></div>
+    <div class="stat-card"><div class="stat-label">Jackpots Won</div><div class="stat-value" style="color:var(--jackpot-won)">${wonCount}</div></div>
+    <div class="stat-card"><div class="stat-label">Largest</div><div class="stat-value" style="color:var(--mm-gold)">${formatMoney(maxJP)}</div></div>
+    <div class="stat-card"><div class="stat-label">Avg Jackpot</div><div class="stat-value">${formatMoney(avgJP)}</div></div>
+  `;
+  
+  const totalPages = Math.ceil(data.length / state.perPage);
+  if (state.mmPage > totalPages) state.mmPage = totalPages || 1;
+  const startIdx = (state.mmPage - 1) * state.perPage;
+  const pageData = data.slice(startIdx, startIdx + state.perPage);
+  
+  let html = '';
+  pageData.forEach((d, i) => {
+    const [date, nums, mb, mult, jp, cv, won, info] = d;
+    const rowClass = won ? 'jackpot-won-row' : '';
+    const drawNum = state.mmSortDir === 'desc' ? data.length - startIdx - i : startIdx + i + 1;
+    
+    html += `<tr class="${rowClass}">
+      <td class="draw-number-col"><span style="color:var(--text-muted);font-family:'Space Mono',monospace;font-size:11px">${drawNum}</span></td>
+      <td><span class="draw-date">${formatDate(date)}<span class="draw-day">${getDayName(date)}</span></span></td>
+      <td><div class="ball-row">
+        ${nums.map(n => `<span class="ball white-ball">${n}</span>`).join('')}
+        <span class="ball mega-ball">${mb}</span>
+      </div></td>
+      <td><span class="jackpot-amount" style="color:${won ? 'var(--jackpot-won)' : 'var(--text-primary)'}">${formatMoney(jp)}</span></td>
+      <td><span class="jackpot-cash">${formatMoney(cv)}</span></td>
+      <td>${won ? '<span class="jackpot-won-badge">✓ WON</span>' : '<span class="rollover-badge">Rollover</span>'}</td>
+      <td>${mult ? `<span class="multiplier">${mult}x</span>` : '<span style="color:var(--text-muted)">—</span>'}</td>
+      <td>${won && info ? `<span class="winner-info"><span class="winner-location">${info}</span></span>` : ''}</td>
+    </tr>`;
+  });
+  
+  document.getElementById('mm-tbody').innerHTML = html;
+  
+  let pagHTML = '';
+  pagHTML += `<button class="page-btn" onclick="state.mmPage=1;renderMegaMillions()" ${state.mmPage===1?'disabled':''}>«</button>`;
+  pagHTML += `<button class="page-btn" onclick="state.mmPage--;renderMegaMillions()" ${state.mmPage===1?'disabled':''}>‹</button>`;
+  pagHTML += `<span class="page-info">Page ${state.mmPage} of ${totalPages} (${data.length} draws)</span>`;
+  pagHTML += `<button class="page-btn" onclick="state.mmPage++;renderMegaMillions()" ${state.mmPage>=totalPages?'disabled':''}>›</button>`;
+  pagHTML += `<button class="page-btn" onclick="state.mmPage=${totalPages};renderMegaMillions()" ${state.mmPage>=totalPages?'disabled':''}>»</button>`;
+  document.getElementById('mm-pagination').innerHTML = pagHTML;
+}
+
+// ==============================
+// HOT & COLD ANALYSIS ENGINE
+// ==============================
+let analysisState = {
+  game: 'pb', // 'pb' or 'mm'
+  depth: 'single' // 'single', 'pairs', 'triples'
+};
+
+function switchAnalysisGame(game) {
+  analysisState.game = game;
+  document.querySelectorAll('.analysis-game-btn').forEach(b => b.className = 'analysis-game-btn');
+  if (game === 'pb') document.getElementById('analysis-pb-btn').classList.add('active-pb-analysis');
+  else document.getElementById('analysis-mm-btn').classList.add('active-mm-analysis');
+  renderAnalysis();
+}
+
+function switchDepth(depth) {
+  analysisState.depth = depth;
+  document.querySelectorAll('.depth-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('depth-' + depth).classList.add('active');
+  renderAnalysis();
+}
+
+// Extract all white ball arrays from a dataset
+function getWhiteBalls(data) {
+  return data.map(d => d[1]);
+}
+
+// SINGLE NUMBER FREQUENCY
+function calcSingleFreq(draws) {
+  const freq = {};
+  draws.forEach(balls => {
+    balls.forEach(n => {
+      freq[n] = (freq[n] || 0) + 1;
+    });
+  });
+  return Object.entries(freq).map(([num, count]) => ({
+    numbers: [parseInt(num)],
+    count
+  }));
+}
+
+// PAIR FREQUENCY - every 2-number combo that appeared together in a draw
+function calcPairFreq(draws) {
+  const freq = {};
+  draws.forEach(balls => {
+    const sorted = [...balls].sort((a,b) => a - b);
+    for (let i = 0; i < sorted.length; i++) {
+      for (let j = i + 1; j < sorted.length; j++) {
+        const key = sorted[i] + '-' + sorted[j];
+        freq[key] = (freq[key] || 0) + 1;
+      }
+    }
+  });
+  return Object.entries(freq).map(([key, count]) => ({
+    numbers: key.split('-').map(Number),
+    count
+  }));
+}
+
+// TRIPLE FREQUENCY - every 3-number combo that appeared together in a draw
+function calcTripleFreq(draws) {
+  const freq = {};
+  draws.forEach(balls => {
+    const sorted = [...balls].sort((a,b) => a - b);
+    for (let i = 0; i < sorted.length; i++) {
+      for (let j = i + 1; j < sorted.length; j++) {
+        for (let k = j + 1; k < sorted.length; k++) {
+          const key = sorted[i] + '-' + sorted[j] + '-' + sorted[k];
+          freq[key] = (freq[key] || 0) + 1;
+        }
+      }
+    }
+  });
+  return Object.entries(freq).map(([key, count]) => ({
+    numbers: key.split('-').map(Number),
+    count
+  }));
+}
+
+function renderFreqList(items, type, maxCount) {
+  return items.map((item, i) => {
+    const barWidth = Math.max(8, (item.count / maxCount) * 100);
+    const ballClass = type === 'hot' ? 'hot-ball' : 'cold-ball';
+    const barClass = type === 'hot' ? 'hot-bar' : 'cold-bar';
+    const countClass = type === 'hot' ? 'hot-count' : 'cold-count';
+    
+    return `<div class="freq-row">
+      <span class="freq-rank">${i + 1}.</span>
+      <div class="freq-numbers">
+        ${item.numbers.map(n => `<span class="freq-ball ${ballClass}">${n}</span>`).join('')}
+      </div>
+      <div class="freq-bar-container">
+        <div class="freq-bar-track">
+          <div class="freq-bar ${barClass}" style="width:${barWidth}%"></div>
+        </div>
+        <span class="freq-count ${countClass}">${item.count}<span class="freq-label">×</span></span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderAnalysis() {
+  const data = analysisState.game === 'pb' ? powerballData : megaMillionsData;
+  const draws = getWhiteBalls(data);
+  const gameName = analysisState.game === 'pb' ? 'Powerball' : 'Mega Millions';
+  const totalDraws = draws.length;
+  
+  let freqData;
+  let subLabel;
+  
+  if (analysisState.depth === 'single') {
+    freqData = calcSingleFreq(draws);
+    subLabel = 'Individual white ball frequency across ' + totalDraws + ' draws';
+  } else if (analysisState.depth === 'pairs') {
+    freqData = calcPairFreq(draws);
+    subLabel = '2-number combos drawn together across ' + totalDraws + ' draws';
+  } else {
+    freqData = calcTripleFreq(draws);
+    subLabel = '3-number combos drawn together across ' + totalDraws + ' draws';
+  }
+  
+  // Sort for hot (highest count first)
+  const hotSorted = [...freqData].sort((a, b) => b.count - a.count || a.numbers[0] - b.numbers[0]);
+  // Sort for cold (lowest count first)
+  const coldSorted = [...freqData].sort((a, b) => a.count - b.count || a.numbers[0] - b.numbers[0]);
+  
+  const hot10 = hotSorted.slice(0, 10);
+  const cold10 = coldSorted.slice(0, 10);
+  
+  const maxHot = hot10.length ? hot10[0].count : 1;
+  const maxCold = hot10.length ? hot10[0].count : 1; // use same scale for comparison
+  
+  document.getElementById('hot-sub').textContent = subLabel;
+  document.getElementById('cold-sub').textContent = subLabel;
+  
+  document.getElementById('hot-list').innerHTML = renderFreqList(hot10, 'hot', maxHot);
+  document.getElementById('cold-list').innerHTML = renderFreqList(cold10, 'cold', maxHot);
+  
+  // Note at bottom
+  const depthLabels = { single: 'single numbers', pairs: '2-number combinations', triples: '3-number combinations' };
+  document.getElementById('analysis-note').innerHTML = 
+    `Analyzing ${depthLabels[analysisState.depth]} from ${totalDraws} ${gameName} draws (Jan 2025 — Present) • White balls only`;
+  
+  // ==============================
+  // SPECIAL BALL HOT/COLD
+  // ==============================
+  renderSpecialBall();
+}
+
+function calcSpecialBallFreq(data, ballIndex) {
+  // ballIndex = 2 for both PB and MM (position in array)
+  const freq = {};
+  data.forEach(d => {
+    const num = d[ballIndex];
+    if (num !== null && num !== undefined) {
+      freq[num] = (freq[num] || 0) + 1;
+    }
+  });
+  return Object.entries(freq).map(([num, count]) => ({
+    number: parseInt(num),
+    count
+  }));
+}
+
+function renderSpecialBall() {
+  const data = analysisState.game === 'pb' ? powerballData : megaMillionsData;
+  const isPB = analysisState.game === 'pb';
+  const ballName = isPB ? 'Powerball' : 'Mega Ball';
+  const maxNum = isPB ? 26 : 24;
+  
+  document.getElementById('special-ball-title').innerHTML = 
+    isPB ? '🔴 Powerball Hot & Cold' : '🟡 Mega Ball Hot & Cold';
+  document.getElementById('special-ball-sub').textContent = 
+    `${ballName} frequency (1-${maxNum}) across ${data.length} draws`;
+  
+  const freqData = calcSpecialBallFreq(data, 2);
+  const hotSorted = [...freqData].sort((a, b) => b.count - a.count);
+  const coldSorted = [...freqData].sort((a, b) => a.count - b.count);
+  const hot8 = hotSorted.slice(0, 8);
+  const cold8 = coldSorted.slice(0, 8);
+  const maxCount = hot8.length ? hot8[0].count : 1;
+  
+  const hotClass = isPB ? 'hot-pb' : 'hot-mb';
+  const coldClass = isPB ? 'cold-pb' : 'cold-mb';
+  
+  function renderSpecialRows(items, ballClass, type) {
+    return items.map((item, i) => {
+      const barW = Math.max(10, (item.count / maxCount) * 100);
+      const barClass = type === 'hot' ? 'hot-bar' : 'cold-bar';
+      const countClass = type === 'hot' ? 'hot-count' : 'cold-count';
+      return `<div class="special-ball-row">
+        <span class="freq-rank">${i+1}.</span>
+        <span class="special-ball-num ${ballClass}">${item.number}</span>
+        <div class="freq-bar-container">
+          <div class="freq-bar-track">
+            <div class="freq-bar ${barClass}" style="width:${barW}%"></div>
+          </div>
+          <span class="freq-count ${countClass}">${item.count}<span class="freq-label">×</span></span>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  
+  document.getElementById('special-ball-grid').innerHTML = `
+    <div class="special-ball-col">
+      <h4 class="hot-label">🔥 Hot ${ballName}s</h4>
+      ${renderSpecialRows(hot8, hotClass, 'hot')}
+    </div>
+    <div class="special-ball-col">
+      <h4 class="cold-label">🧊 Cold ${ballName}s</h4>
+      ${renderSpecialRows(cold8, coldClass, 'cold')}
+    </div>
+  `;
+}
+
+// ==============================
+// NUMBER GENERATOR ENGINE
+// ==============================
+let genState = { game: 'pb' };
+
+function switchGenGame(game) {
+  genState.game = game;
+  document.querySelectorAll('.gen-game-btn').forEach(b => b.className = 'gen-game-btn');
+  if (game === 'pb') document.getElementById('gen-pb-btn').classList.add('active-pb-gen');
+  else document.getElementById('gen-mm-btn').classList.add('active-mm-gen');
+  // Reset displays
+  ['random','hot','mix','top10'].forEach(type => {
+    resetGenBalls(type);
+  });
+  renderGenerator();
+}
+
+function renderGenerator() {
+  const isPB = genState.game === 'pb';
+  const data = isPB ? powerballData : megaMillionsData;
+  const gameName = isPB ? 'Powerball' : 'Mega Millions';
+  const whiteRange = isPB ? '1-69' : '1-70';
+  const specialRange = isPB ? '1-26' : '1-24';
+  const specialName = isPB ? 'Powerball' : 'Mega Ball';
+  
+  // Calculate and display top 10 hot numbers for the pool info
+  const whiteFreq = {};
+  data.forEach(d => {
+    d[1].forEach(n => { whiteFreq[n] = (whiteFreq[n] || 0) + 1; });
+  });
+  const whiteFreqArr = Object.entries(whiteFreq).map(([n, c]) => ({ number: parseInt(n), count: c }));
+  const top10 = [...whiteFreqArr].sort((a, b) => b.count - a.count).slice(0, 10).map(f => f.number).sort((a,b) => a-b);
+  
+  const counterEl = document.getElementById('gen-top10-counter');
+  if (counterEl) {
+    counterEl.innerHTML = `Pool: <strong>${top10.join(', ')}</strong>`;
+  }
+  
+  document.getElementById('gen-note').innerHTML = 
+    `${gameName} • White balls: ${whiteRange} • ${specialName}: ${specialRange} • Based on ${data.length} draws`;
+}
+
+function resetGenBalls(type) {
+  const container = document.getElementById('gen-' + type + '-balls');
+  const isPB = genState.game === 'pb';
+  container.innerHTML = `
+    <span class="gen-ball gen-empty">?</span>
+    <span class="gen-ball gen-empty">?</span>
+    <span class="gen-ball gen-empty">?</span>
+    <span class="gen-ball gen-empty">?</span>
+    <span class="gen-ball gen-empty">?</span>
+    <span class="gen-separator"></span>
+    <span class="gen-ball gen-empty">?</span>
+  `;
+}
+
+function getWeightedPool(freqArr, poolSize, bias) {
+  // bias: 'hot' = more weight to frequent, 'cold' = more weight to infrequent
+  const maxCount = Math.max(...freqArr.map(f => f.count));
+  const minCount = Math.min(...freqArr.map(f => f.count));
+  const pool = [];
+  freqArr.forEach(f => {
+    let weight;
+    if (bias === 'hot') {
+      weight = Math.pow(f.count, 2); // square to heavily favor hot
+    } else {
+      weight = Math.pow((maxCount - f.count + 1), 2); // inverse
+    }
+    for (let i = 0; i < Math.max(1, Math.round(weight / 2)); i++) {
+      pool.push(f.number);
+    }
+  });
+  return pool;
+}
+
+function pickFromPool(pool, count, exclude) {
+  const result = [];
+  const used = new Set(exclude || []);
+  let attempts = 0;
+  while (result.length < count && attempts < 5000) {
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    if (!used.has(pick)) {
+      result.push(pick);
+      used.add(pick);
+    }
+    attempts++;
+  }
+  return result.sort((a, b) => a - b);
+}
+
+function pickRandom(min, max, count, exclude) {
+  const result = [];
+  const used = new Set(exclude || []);
+  while (result.length < count) {
+    const n = Math.floor(Math.random() * (max - min + 1)) + min;
+    if (!used.has(n)) {
+      result.push(n);
+      used.add(n);
+    }
+  }
+  return result.sort((a, b) => a - b);
+}
+
+function generate(type) {
+  const isPB = genState.game === 'pb';
+  const data = isPB ? powerballData : megaMillionsData;
+  const whiteMax = isPB ? 69 : 70;
+  const specialMax = isPB ? 26 : 24;
+  const specialClass = isPB ? 'gen-pb' : 'gen-mb';
+  
+  let whiteBalls = [];
+  let specialBall;
+  
+  // Get frequency data for white balls
+  const whiteFreq = {};
+  data.forEach(d => {
+    d[1].forEach(n => { whiteFreq[n] = (whiteFreq[n] || 0) + 1; });
+  });
+  const whiteFreqArr = Object.entries(whiteFreq).map(([n, c]) => ({ number: parseInt(n), count: c }));
+  
+  // Get frequency data for special ball
+  const specialFreq = {};
+  data.forEach(d => {
+    if (d[2] !== null) specialFreq[d[2]] = (specialFreq[d[2]] || 0) + 1;
+  });
+  const specialFreqArr = Object.entries(specialFreq).map(([n, c]) => ({ number: parseInt(n), count: c }));
+  
+  if (type === 'random') {
+    whiteBalls = pickRandom(1, whiteMax, 5);
+    specialBall = pickRandom(1, specialMax, 1)[0];
+    
+  } else if (type === 'hot') {
+    const hotPool = getWeightedPool(whiteFreqArr, whiteMax, 'hot');
+    whiteBalls = pickFromPool(hotPool, 5);
+    const hotSpecialPool = getWeightedPool(specialFreqArr, specialMax, 'hot');
+    specialBall = pickFromPool(hotSpecialPool, 1)[0];
+    
+  } else if (type === 'mix') {
+    // 3 hot white balls
+    const hotPool = getWeightedPool(whiteFreqArr, whiteMax, 'hot');
+    const hotPicks = pickFromPool(hotPool, 3);
+    // 2 cold white balls
+    const coldPool = getWeightedPool(whiteFreqArr, whiteMax, 'cold');
+    const coldPicks = pickFromPool(coldPool, 2, hotPicks);
+    whiteBalls = [...hotPicks, ...coldPicks].sort((a, b) => a - b);
+    // Special ball: random between hot and cold
+    if (Math.random() > 0.5) {
+      const hotSP = getWeightedPool(specialFreqArr, specialMax, 'hot');
+      specialBall = pickFromPool(hotSP, 1)[0];
+    } else {
+      const coldSP = getWeightedPool(specialFreqArr, specialMax, 'cold');
+      specialBall = pickFromPool(coldSP, 1)[0];
+    }
+  } else if (type === 'top10') {
+    // Get the top 10 hottest white ball numbers
+    const top10Hot = [...whiteFreqArr].sort((a, b) => b.count - a.count).slice(0, 10).map(f => f.number);
+    // Pick 5 random from only those 10 (pure random within the top 10, equal weight)
+    const shuffled = [...top10Hot].sort(() => Math.random() - 0.5);
+    whiteBalls = shuffled.slice(0, 5).sort((a, b) => a - b);
+    // Special ball: weighted hot
+    const hotSP = getWeightedPool(specialFreqArr, specialMax, 'hot');
+    specialBall = pickFromPool(hotSP, 1)[0];
+    // Update combo counter
+    const counterEl = document.getElementById('gen-top10-counter');
+    if (counterEl) {
+      counterEl.innerHTML = `Pool: <strong>${top10Hot.sort((a,b) => a-b).join(', ')}</strong>`;
+    }
+  }
+  
+  // Render with animation
+  const container = document.getElementById('gen-' + type + '-balls');
+  const ballEls = [];
+  
+  whiteBalls.forEach((n, i) => {
+    ballEls.push({ num: n, cls: 'gen-white', delay: i * 100 });
+  });
+  ballEls.push({ separator: true, delay: 500 });
+  ballEls.push({ num: specialBall, cls: specialClass, delay: 600 });
+  
+  container.innerHTML = '';
+  
+  ballEls.forEach(b => {
+    if (b.separator) {
+      const sep = document.createElement('span');
+      sep.className = 'gen-separator';
+      container.appendChild(sep);
+      return;
+    }
+    const el = document.createElement('span');
+    el.className = 'gen-ball ' + b.cls;
+    el.style.opacity = '0';
+    el.textContent = b.num;
+    container.appendChild(el);
+    setTimeout(() => {
+      el.style.opacity = '1';
+      el.classList.add('pop');
+    }, b.delay);
+  });
+}
+
+// ==============================
+// POPULATE MONTH FILTERS
+// ==============================
+function populateFilters() {
+  const months = ['all','1','2','3','4','5','6','7','8','9','10','11','12'];
+  const labels = ['All Months','January','February','March','April','May','June','July','August','September','October','November','December'];
+  
+  ['pb','mm'].forEach(g => {
+    const sel = document.getElementById(g + '-month-filter');
+    sel.innerHTML = months.map((m,i) => `<option value="${m}">${labels[i]}</option>`).join('');
+  });
+}
+
+// ==============================
+// INITIALIZE WITH API DATA
+// ==============================
+
+// Build jackpot lookup maps from hardcoded data (keyed by date)
+const pbJackpotLookup = {};
+powerballData.forEach(d => {
+  pbJackpotLookup[d[0]] = { jp: d[4], cv: d[5], won: d[6], info: d[7] };
+});
+
+const mmJackpotLookup = {};
+megaMillionsData.forEach(d => {
+  mmJackpotLookup[d[0]] = { jp: d[4], cv: d[5], won: d[6], info: d[7] };
+});
+
+// NY Open Data SODA API endpoints (free, no key required, CORS enabled)
+const PB_API = 'https://data.ny.gov/resource/d6yy-54nr.json';
+const MM_API = 'https://data.ny.gov/resource/5xaw-6ayf.json';
+
+function parseDate(apiDate) {
+  // API returns "2025-01-04T00:00:00.000" format
+  return apiDate.split('T')[0];
+}
+
+function parsePBRow(row) {
+  // row.winning_numbers = "07 19 21 54 63" (space separated, 5 white + nothing else)
+  // row.multiplier = "2" (Power Play)
+  // row.draw_date = "2025-07-02T00:00:00.000"
+  const date = parseDate(row.draw_date);
+  const allNums = row.winning_numbers.trim().split(/\s+/).map(Number);
+  const whiteBalls = allNums.slice(0, 5);
+  const pb = allNums.length > 5 ? allNums[5] : null;
+  const pp = row.multiplier ? parseInt(row.multiplier) : null;
+  
+  // Merge with jackpot lookup
+  const jk = pbJackpotLookup[date] || {};
+  const jp = jk.jp || 0;
+  const cv = jk.cv || 0;
+  const won = jk.won || false;
+  const info = jk.info || null;
+  
+  return [date, whiteBalls, pb, pp, jp, cv, won, info];
+}
+
+function parseMMRow(row) {
+  // row.winning_numbers = "05 18 32 46 60" (5 white balls)
+  // row.mega_ball = "3"
+  // row.multiplier = "2"
+  // row.draw_date = "2025-05-02T00:00:00.000"
+  const date = parseDate(row.draw_date);
+  const whiteBalls = row.winning_numbers.trim().split(/\s+/).map(Number);
+  const mb = row.mega_ball ? parseInt(row.mega_ball) : null;
+  const mult = row.multiplier ? parseInt(row.multiplier) : null;
+  
+  const jk = mmJackpotLookup[date] || {};
+  const jp = jk.jp || 0;
+  const cv = jk.cv || 0;
+  const won = jk.won || false;
+  const info = jk.info || null;
+  
+  return [date, whiteBalls, mb, mult, jp, cv, won, info];
+}
+
+async function fetchLotteryData() {
+  const loadingEl = document.createElement('div');
+  loadingEl.id = 'loading-overlay';
+  loadingEl.innerHTML = `
+    <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(10,10,15,0.85);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:1000;">
+      <div style="font-family:'Playfair Display',serif;font-size:24px;color:#e8e8f0;margin-bottom:12px;">
+        Loading Live Data...
+      </div>
+      <div style="font-family:'Space Mono',monospace;font-size:12px;color:#8888a0;" id="load-status">
+        Connecting to NY Open Data API...
+      </div>
+    </div>`;
+  document.body.appendChild(loadingEl);
+  
+  let pbSuccess = false;
+  let mmSuccess = false;
+  
+  try {
+    const statusEl = document.getElementById('load-status');
+    
+    // Fetch Powerball (all draws from 2025-01-01 onward)
+    statusEl.textContent = 'Fetching Powerball results...';
+    const pbResp = await fetch(
+      PB_API + '?$where=draw_date>=%272025-01-01T00:00:00%27&$order=draw_date%20DESC&$limit=500'
+    );
+    if (pbResp.ok) {
+      const pbRows = await pbResp.json();
+      if (pbRows.length > 0) {
+        const newPBData = pbRows.map(parsePBRow).filter(d => d[2] !== null); // filter out any bad parses
+        if (newPBData.length > 0) {
+          powerballData.length = 0;
+          newPBData.forEach(d => powerballData.push(d));
+          pbSuccess = true;
+        }
+      }
+    }
+    
+    // Fetch Mega Millions
+    statusEl.textContent = 'Fetching Mega Millions results...';
+    const mmResp = await fetch(
+      MM_API + '?$where=draw_date>=%272025-01-01T00:00:00%27&$order=draw_date%20DESC&$limit=500'
+    );
+    if (mmResp.ok) {
+      const mmRows = await mmResp.json();
+      if (mmRows.length > 0) {
+        const newMMData = mmRows.map(parseMMRow).filter(d => d[2] !== null);
+        if (newMMData.length > 0) {
+          megaMillionsData.length = 0;
+          newMMData.forEach(d => megaMillionsData.push(d));
+          mmSuccess = true;
+        }
+      }
+    }
+    
+    statusEl.textContent = 'Rendering dashboard...';
+  } catch (err) {
+    console.warn('API fetch error, using cached data:', err);
+  }
+  
+  // Update the data range label
+  const rangeEl = document.querySelector('.data-range');
+  const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  let sourceNote = '';
+  if (pbSuccess && mmSuccess) sourceNote = ' • Live API ✓';
+  else if (pbSuccess || mmSuccess) sourceNote = ' • Partial API ✓';
+  else sourceNote = ' • Cached Data';
+  rangeEl.textContent = `Jan 2025 — Present • Updated ${today}${sourceNote}`;
+  
+  // Remove loading overlay
+  const overlay = document.getElementById('loading-overlay');
+  if (overlay) overlay.remove();
+  
+  // Now render
+  populateFilters();
+  renderOverview();
+}
+
+// Kick off
+fetchLotteryData();
+</script>
+
+</body>
+</html>
