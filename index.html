@@ -689,6 +689,116 @@ body::before {
   padding-top: 8px;
 }
 
+/* Current Jackpot Hero Block */
+.current-jackpot {
+  position: relative;
+  border-radius: 20px;
+  padding: 36px 32px;
+  margin-bottom: 24px;
+  text-align: center;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.current-jackpot::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  opacity: 0.15;
+  z-index: 0;
+}
+
+.current-jackpot.pb-jackpot {
+  background: radial-gradient(ellipse at center, rgba(226, 54, 54, 0.18) 0%, var(--bg-card) 70%);
+  border-color: rgba(226, 54, 54, 0.3);
+  box-shadow: 0 8px 40px rgba(226, 54, 54, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.current-jackpot.mm-jackpot {
+  background: radial-gradient(ellipse at center, rgba(212, 168, 67, 0.18) 0%, var(--bg-card) 70%);
+  border-color: rgba(212, 168, 67, 0.3);
+  box-shadow: 0 8px 40px rgba(212, 168, 67, 0.15), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+
+.current-jackpot > * { position: relative; z-index: 1; }
+
+.cj-label {
+  font-family: 'Space Mono', monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  margin-bottom: 12px;
+}
+
+.cj-amount {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: 88px;
+  line-height: 1;
+  letter-spacing: -2px;
+  margin-bottom: 14px;
+  text-shadow: 0 4px 30px currentColor;
+  animation: jackpotPulse 3s ease-in-out infinite;
+}
+
+.pb-jackpot .cj-amount {
+  background: linear-gradient(135deg, #ff5050 0%, #e23636 50%, #b81e1e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(226, 54, 54, 0.4));
+}
+
+.mm-jackpot .cj-amount {
+  background: linear-gradient(135deg, #fbd24a 0%, #d4a843 50%, #a87f1e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 30px rgba(212, 168, 67, 0.4));
+}
+
+@keyframes jackpotPulse {
+  0%, 100% { filter: drop-shadow(0 0 30px currentColor); }
+  50% { filter: drop-shadow(0 0 50px currentColor); }
+}
+
+.cj-cash {
+  font-family: 'Space Mono', monospace;
+  font-size: 13px;
+  color: var(--text-secondary);
+  letter-spacing: 0.5px;
+}
+
+.cj-cash span {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .current-jackpot { padding: 24px 16px; }
+  .cj-amount { font-size: 56px; letter-spacing: -1px; }
+  .cj-label { font-size: 10px; letter-spacing: 2px; }
+  .cj-cash { font-size: 11px; }
+}
+
+/* Winners Section (within game tab) */
+.winners-section {
+  margin-top: 32px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.winners-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 800;
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 /* Stats Bar */
 .stats-bar {
   display: grid;
@@ -1112,10 +1222,7 @@ body::before {
   </div>
 
   <div class="tab-nav">
-    <button class="tab-btn active-overview" onclick="switchTab('overview')" id="tab-overview">
-      <span class="tab-dot ov"></span> Overview
-    </button>
-    <button class="tab-btn" onclick="switchTab('powerball')" id="tab-powerball">
+    <button class="tab-btn active-pb" onclick="switchTab('powerball')" id="tab-powerball">
       <span class="tab-dot pb"></span> Powerball
     </button>
     <button class="tab-btn" onclick="switchTab('megamillions')" id="tab-megamillions">
@@ -1129,23 +1236,13 @@ body::before {
     </button>
   </div>
 
-  <!-- OVERVIEW SECTION -->
-  <div class="section-panel active" id="panel-overview">
-    <div class="stats-bar" id="overview-stats"></div>
-    <div class="overview-grid">
-      <div class="overview-card">
-        <h3><span class="tab-dot pb" style="width:12px;height:12px;"></span> Powerball Jackpot Winners</h3>
-        <div id="pb-winners-list"></div>
-      </div>
-      <div class="overview-card">
-        <h3><span class="tab-dot mm" style="width:12px;height:12px;"></span> Mega Millions Jackpot Winners</h3>
-        <div id="mm-winners-list"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- POWERBALL SECTION -->
-  <div class="section-panel" id="panel-powerball">
+  <div class="section-panel active" id="panel-powerball">
+    <div class="current-jackpot pb-jackpot">
+      <div class="cj-label">🔴 Current Powerball Jackpot</div>
+      <div class="cj-amount" id="pb-current-jp">—</div>
+      <div class="cj-cash">Cash Value: <span id="pb-current-cv">—</span> • Next Drawing: <span id="pb-next-draw">—</span></div>
+    </div>
     <div class="stats-bar" id="pb-stats"></div>
     <div class="filters" id="pb-filters">
       <div class="filter-group">
@@ -1184,10 +1281,19 @@ body::before {
       </div>
     </div>
     <div class="pagination" id="pb-pagination"></div>
+    <div class="winners-section">
+      <h3 class="winners-title"><span class="tab-dot pb" style="width:12px;height:12px;display:inline-block;border-radius:50%;"></span> Powerball Jackpot Winners</h3>
+      <div id="pb-winners-list"></div>
+    </div>
   </div>
 
   <!-- MEGA MILLIONS SECTION -->
   <div class="section-panel" id="panel-megamillions">
+    <div class="current-jackpot mm-jackpot">
+      <div class="cj-label">🟡 Current Mega Millions Jackpot</div>
+      <div class="cj-amount" id="mm-current-jp">—</div>
+      <div class="cj-cash">Cash Value: <span id="mm-current-cv">—</span> • Next Drawing: <span id="mm-next-draw">—</span></div>
+    </div>
     <div class="stats-bar" id="mm-stats"></div>
     <div class="filters" id="mm-filters">
       <div class="filter-group">
@@ -1226,6 +1332,10 @@ body::before {
       </div>
     </div>
     <div class="pagination" id="mm-pagination"></div>
+    <div class="winners-section">
+      <h3 class="winners-title"><span class="tab-dot mm" style="width:12px;height:12px;display:inline-block;border-radius:50%;"></span> Mega Millions Jackpot Winners</h3>
+      <div id="mm-winners-list"></div>
+    </div>
   </div>
 
   <!-- ANALYSIS SECTION -->
@@ -1710,7 +1820,7 @@ let megaMillionsData = [
 // APP STATE
 // ==============================
 let state = {
-  activeTab: 'overview',
+  activeTab: 'powerball',
   pbPage: 1,
   mmPage: 1,
   pbWonOnly: false,
@@ -1721,6 +1831,67 @@ let state = {
   mmSortField: 'date',
   perPage: 25,
 };
+
+// ==============================
+// CURRENT JACKPOT INFO
+// Auto-updated from Magayo API on page load
+// Fallback values used if API fails or key is missing
+// ==============================
+const MAGAYO_API_KEY = 'dGk8TK3tRQF7BnRAP7'; // <-- Get free key at magayo.com/lottery-feeds/sign-up/
+
+let currentJackpots = {
+  pb: { amount: 194, cash: 87.1, nextDraw: 'Sat, Apr 11' },
+  mm: { amount: 80, cash: 36.8, nextDraw: 'Tue, Apr 14' }
+};
+
+async function fetchCurrentJackpots() {
+  if (!MAGAYO_API_KEY || MAGAYO_API_KEY === 'PASTE_YOUR_KEY_HERE') {
+    console.log('Magayo API key not set, using cached jackpot values');
+    return;
+  }
+  
+  try {
+    // Powerball jackpot
+    const pbJpResp = await fetch(`https://www.magayo.com/api/jackpot.php?api_key=${MAGAYO_API_KEY}&game=us_powerball&format=json`);
+    if (pbJpResp.ok) {
+      const pbJp = await pbJpResp.json();
+      if (pbJp && pbJp.jackpot) {
+        currentJackpots.pb.amount = Math.round(pbJp.jackpot / 1000000);
+      }
+    }
+    // Powerball next draw
+    const pbNdResp = await fetch(`https://www.magayo.com/api/next_draw.php?api_key=${MAGAYO_API_KEY}&game=us_powerball&format=json`);
+    if (pbNdResp.ok) {
+      const pbNd = await pbNdResp.json();
+      if (pbNd && pbNd.next_draw) {
+        const d = new Date(pbNd.next_draw + 'T12:00:00');
+        currentJackpots.pb.nextDraw = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+    }
+    // Mega Millions jackpot
+    const mmJpResp = await fetch(`https://www.magayo.com/api/jackpot.php?api_key=${MAGAYO_API_KEY}&game=us_mega_millions&format=json`);
+    if (mmJpResp.ok) {
+      const mmJp = await mmJpResp.json();
+      if (mmJp && mmJp.jackpot) {
+        currentJackpots.mm.amount = Math.round(mmJp.jackpot / 1000000);
+      }
+    }
+    // Mega Millions next draw
+    const mmNdResp = await fetch(`https://www.magayo.com/api/next_draw.php?api_key=${MAGAYO_API_KEY}&game=us_mega_millions&format=json`);
+    if (mmNdResp.ok) {
+      const mmNd = await mmNdResp.json();
+      if (mmNd && mmNd.next_draw) {
+        const d = new Date(mmNd.next_draw + 'T12:00:00');
+        currentJackpots.mm.nextDraw = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      }
+    }
+    // Estimate cash values as ~46% of annuity (typical ratio)
+    currentJackpots.pb.cash = Math.round(currentJackpots.pb.amount * 0.46 * 10) / 10;
+    currentJackpots.mm.cash = Math.round(currentJackpots.mm.amount * 0.46 * 10) / 10;
+  } catch (err) {
+    console.warn('Magayo API fetch failed, using cached values:', err);
+  }
+}
 
 // ==============================
 // UTILITY FUNCTIONS
@@ -1768,10 +1939,8 @@ function switchTab(tab) {
   else if (tab === 'megamillions') tabBtn.classList.add('active-mm');
   else if (tab === 'analysis') tabBtn.classList.add('active-analysis');
   else if (tab === 'generator') tabBtn.classList.add('active-generator');
-  else tabBtn.classList.add('active-overview');
   
-  if (tab === 'overview') renderOverview();
-  else if (tab === 'powerball') renderPowerball();
+  if (tab === 'powerball') renderPowerball();
   else if (tab === 'megamillions') renderMegaMillions();
   else if (tab === 'analysis') renderAnalysis();
   else if (tab === 'generator') renderGenerator();
@@ -1825,82 +1994,14 @@ function sortTable(game, field) {
 }
 
 // ==============================
-// RENDER OVERVIEW
-// ==============================
-function renderOverview() {
-  const totalPBDraws = powerballData.length;
-  const totalMMDraws = megaMillionsData.length;
-  const pbWins = powerballData.filter(d => d[6]);
-  const mmWins = megaMillionsData.filter(d => d[6]);
-  const biggestPB = Math.max(...powerballData.map(d => d[4]));
-  const biggestMM = Math.max(...megaMillionsData.map(d => d[4]));
-  
-  document.getElementById('overview-stats').innerHTML = `
-    <div class="stat-card">
-      <div class="stat-label">Total Draws</div>
-      <div class="stat-value" style="color:var(--text-primary)">${totalPBDraws + totalMMDraws}</div>
-      <div class="stat-sub">PB: ${totalPBDraws} • MM: ${totalMMDraws}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Jackpots Won</div>
-      <div class="stat-value" style="color:var(--jackpot-won)">${pbWins.length + mmWins.length}</div>
-      <div class="stat-sub">PB: ${pbWins.length} • MM: ${mmWins.length}</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Largest PB Jackpot</div>
-      <div class="stat-value" style="color:var(--pb-red)">${formatMoney(biggestPB)}</div>
-      <div class="stat-sub">Dec 24, 2025 • Arkansas</div>
-    </div>
-    <div class="stat-card">
-      <div class="stat-label">Largest MM Jackpot</div>
-      <div class="stat-value" style="color:var(--mm-gold)">${formatMoney(biggestMM)}</div>
-      <div class="stat-sub">Nov 14, 2025 • Georgia</div>
-    </div>
-  `;
-  
-  // PB Winners
-  let pbHTML = '';
-  pbWins.sort((a,b) => new Date(b[0]) - new Date(a[0])).forEach(w => {
-    pbHTML += `
-    <div class="jackpot-winner-card">
-      <div class="winner-card-header">
-        <span class="winner-card-game pb-game">Powerball</span>
-        <span class="draw-date">${formatDate(w[0])}</span>
-      </div>
-      <div class="winner-card-amount" style="color:var(--pb-red)">${formatMoney(w[4])}</div>
-      <div class="winner-card-details">
-        Cash Value: ${formatMoney(w[5])}<br>
-        Numbers: ${w[1].join(' - ')} <strong style="color:var(--pb-red)">PB ${w[2]}</strong><br>
-        <span class="winner-card-location">${w[7]}</span>
-      </div>
-    </div>`;
-  });
-  document.getElementById('pb-winners-list').innerHTML = pbHTML;
-  
-  // MM Winners
-  let mmHTML = '';
-  mmWins.sort((a,b) => new Date(b[0]) - new Date(a[0])).forEach(w => {
-    mmHTML += `
-    <div class="jackpot-winner-card">
-      <div class="winner-card-header">
-        <span class="winner-card-game mm-game">Mega Millions</span>
-        <span class="draw-date">${formatDate(w[0])}</span>
-      </div>
-      <div class="winner-card-amount" style="color:var(--mm-gold)">${formatMoney(w[4])}</div>
-      <div class="winner-card-details">
-        Cash Value: ${formatMoney(w[5])}<br>
-        Numbers: ${w[1].join(' - ')} <strong style="color:var(--mm-gold)">MB ${w[2]}</strong><br>
-        <span class="winner-card-location">${w[7]}</span>
-      </div>
-    </div>`;
-  });
-  document.getElementById('mm-winners-list').innerHTML = mmHTML;
-}
-
-// ==============================
 // RENDER POWERBALL TABLE
 // ==============================
 function renderPowerball() {
+  // Update Current Jackpot block
+  document.getElementById('pb-current-jp').textContent = '$' + currentJackpots.pb.amount + ' Million';
+  document.getElementById('pb-current-cv').textContent = '$' + currentJackpots.pb.cash + ' Million';
+  document.getElementById('pb-next-draw').textContent = currentJackpots.pb.nextDraw;
+  
   let data = getFilteredData(powerballData, 'pb');
   
   // Sort
@@ -1960,12 +2061,37 @@ function renderPowerball() {
   pagHTML += `<button class="page-btn" onclick="state.pbPage++;renderPowerball()" ${state.pbPage>=totalPages?'disabled':''}>›</button>`;
   pagHTML += `<button class="page-btn" onclick="state.pbPage=${totalPages};renderPowerball()" ${state.pbPage>=totalPages?'disabled':''}>»</button>`;
   document.getElementById('pb-pagination').innerHTML = pagHTML;
+  
+  // Render winners list
+  const pbWins = powerballData.filter(d => d[6]);
+  let winHTML = '';
+  pbWins.sort((a,b) => new Date(b[0]) - new Date(a[0])).forEach(w => {
+    winHTML += `
+    <div class="jackpot-winner-card">
+      <div class="winner-card-header">
+        <span class="winner-card-game pb-game">Powerball</span>
+        <span class="draw-date">${formatDate(w[0])}</span>
+      </div>
+      <div class="winner-card-amount" style="color:var(--pb-red)">${formatMoney(w[4])}</div>
+      <div class="winner-card-details">
+        Cash Value: ${formatMoney(w[5])}<br>
+        Numbers: ${w[1].join(' - ')} <strong style="color:var(--pb-red)">PB ${w[2]}</strong><br>
+        <span class="winner-card-location">${w[7]}</span>
+      </div>
+    </div>`;
+  });
+  document.getElementById('pb-winners-list').innerHTML = winHTML;
 }
 
 // ==============================
 // RENDER MEGA MILLIONS TABLE
 // ==============================
 function renderMegaMillions() {
+  // Update Current Jackpot block
+  document.getElementById('mm-current-jp').textContent = '$' + currentJackpots.mm.amount + ' Million';
+  document.getElementById('mm-current-cv').textContent = '$' + currentJackpots.mm.cash + ' Million';
+  document.getElementById('mm-next-draw').textContent = currentJackpots.mm.nextDraw;
+  
   let data = getFilteredData(megaMillionsData, 'mm');
   
   if (state.mmSortField === 'jackpot') {
@@ -2021,6 +2147,26 @@ function renderMegaMillions() {
   pagHTML += `<button class="page-btn" onclick="state.mmPage++;renderMegaMillions()" ${state.mmPage>=totalPages?'disabled':''}>›</button>`;
   pagHTML += `<button class="page-btn" onclick="state.mmPage=${totalPages};renderMegaMillions()" ${state.mmPage>=totalPages?'disabled':''}>»</button>`;
   document.getElementById('mm-pagination').innerHTML = pagHTML;
+  
+  // Render winners list
+  const mmWins = megaMillionsData.filter(d => d[6]);
+  let winHTML = '';
+  mmWins.sort((a,b) => new Date(b[0]) - new Date(a[0])).forEach(w => {
+    winHTML += `
+    <div class="jackpot-winner-card">
+      <div class="winner-card-header">
+        <span class="winner-card-game mm-game">Mega Millions</span>
+        <span class="draw-date">${formatDate(w[0])}</span>
+      </div>
+      <div class="winner-card-amount" style="color:var(--mm-gold)">${formatMoney(w[4])}</div>
+      <div class="winner-card-details">
+        Cash Value: ${formatMoney(w[5])}<br>
+        Numbers: ${w[1].join(' - ')} <strong style="color:var(--mm-gold)">MB ${w[2]}</strong><br>
+        <span class="winner-card-location">${w[7]}</span>
+      </div>
+    </div>`;
+  });
+  document.getElementById('mm-winners-list').innerHTML = winHTML;
 }
 
 // ==============================
@@ -2588,9 +2734,12 @@ async function fetchLotteryData() {
   const overlay = document.getElementById('loading-overlay');
   if (overlay) overlay.remove();
   
+  // Fetch current jackpots from Magayo (uses fallback if no key)
+  await fetchCurrentJackpots();
+  
   // Now render
   populateFilters();
-  renderOverview();
+  renderPowerball();
 }
 
 // Kick off
