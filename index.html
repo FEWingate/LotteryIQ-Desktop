@@ -1841,16 +1841,38 @@ async function fetchCurrentJackpots() {
     return;
   }
   
-  // allorigins.win wraps the response in {contents: "..."} where contents is the raw body
-  const PROXY = 'https://api.allorigins.win/get?url=';
+  // Try multiple CORS proxies in order — if one is down/rate-limited, the next takes over
+  const PROXIES = [
+    { url: 'https://api.allorigins.win/get?url=', wrapped: true },
+    { url: 'https://corsproxy.io/?', wrapped: false },
+    { url: 'https://proxy.cors.sh/', wrapped: false },
+    { url: 'https://api.codetabs.com/v1/proxy?quest=', wrapped: false }
+  ];
   
   async function magayoCall(endpoint, game) {
     const target = `https://www.magayo.com/api/${endpoint}?api_key=${MAGAYO_API_KEY}&game=${game}&format=json`;
-    const resp = await fetch(PROXY + encodeURIComponent(target));
-    if (!resp.ok) throw new Error(`Proxy returned ${resp.status}`);
-    const wrapper = await resp.json();
-    if (!wrapper.contents) throw new Error('Empty proxy response');
-    return JSON.parse(wrapper.contents);
+    
+    for (const proxy of PROXIES) {
+      try {
+        const proxyUrl = proxy.url + encodeURIComponent(target);
+        const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
+        if (!resp.ok) continue;
+        
+        if (proxy.wrapped) {
+          // allorigins wraps response in {contents: "..."}
+          const wrapper = await resp.json();
+          if (!wrapper.contents) continue;
+          return JSON.parse(wrapper.contents);
+        } else {
+          // Other proxies return the raw JSON directly
+          return await resp.json();
+        }
+      } catch (e) {
+        console.log(`Proxy ${proxy.url} failed for ${endpoint}/${game}:`, e.message);
+        continue;
+      }
+    }
+    throw new Error('All proxies failed');
   }
   
   let anySuccess = false;
@@ -1896,7 +1918,7 @@ async function fetchCurrentJackpots() {
   if (anySuccess) {
     console.log('✅ Magayo API live data:', JSON.parse(JSON.stringify(currentJackpots)));
   } else {
-    console.warn('❌ All Magayo API calls failed, using cached fallback values');
+    console.warn('❌ All Magayo API calls failed across all proxies, using cached fallback values');
   }
 }
 
