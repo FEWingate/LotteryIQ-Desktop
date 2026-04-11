@@ -738,27 +738,18 @@ body::before {
   line-height: 1;
   letter-spacing: -2px;
   margin-bottom: 14px;
-  text-shadow: 0 4px 30px currentColor;
-  animation: jackpotPulse 3s ease-in-out infinite;
 }
 
 .pb-jackpot .cj-amount {
-  background: linear-gradient(135deg, #ff5050 0%, #e23636 50%, #b81e1e 100%);
+  background: linear-gradient(135deg, #ff6b6b 0%, #ef4444 50%, #dc2626 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 30px rgba(226, 54, 54, 0.4));
 }
 
 .mm-jackpot .cj-amount {
-  background: linear-gradient(135deg, #fbd24a 0%, #d4a843 50%, #a87f1e 100%);
+  background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 50%, #d97706 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 0 30px rgba(212, 168, 67, 0.4));
-}
-
-@keyframes jackpotPulse {
-  0%, 100% { filter: drop-shadow(0 0 30px currentColor); }
-  50% { filter: drop-shadow(0 0 50px currentColor); }
 }
 
 .cj-cash {
@@ -1850,46 +1841,62 @@ async function fetchCurrentJackpots() {
     return;
   }
   
+  // allorigins.win wraps the response in {contents: "..."} where contents is the raw body
+  const PROXY = 'https://api.allorigins.win/get?url=';
+  
+  async function magayoCall(endpoint, game) {
+    const target = `https://www.magayo.com/api/${endpoint}?api_key=${MAGAYO_API_KEY}&game=${game}&format=json`;
+    const resp = await fetch(PROXY + encodeURIComponent(target));
+    if (!resp.ok) throw new Error(`Proxy returned ${resp.status}`);
+    const wrapper = await resp.json();
+    if (!wrapper.contents) throw new Error('Empty proxy response');
+    return JSON.parse(wrapper.contents);
+  }
+  
+  let anySuccess = false;
+  
   try {
-    // Powerball jackpot
-    const pbJpResp = await fetch(`https://www.magayo.com/api/jackpot.php?api_key=${MAGAYO_API_KEY}&game=us_powerball&format=json`);
-    if (pbJpResp.ok) {
-      const pbJp = await pbJpResp.json();
-      if (pbJp && pbJp.jackpot) {
-        currentJackpots.pb.amount = Math.round(pbJp.jackpot / 1000000);
-      }
+    const pbJp = await magayoCall('jackpot.php', 'us_powerball');
+    if (pbJp && pbJp.jackpot && !pbJp.error) {
+      currentJackpots.pb.amount = Math.round(pbJp.jackpot / 1000000);
+      anySuccess = true;
     }
-    // Powerball next draw
-    const pbNdResp = await fetch(`https://www.magayo.com/api/next_draw.php?api_key=${MAGAYO_API_KEY}&game=us_powerball&format=json`);
-    if (pbNdResp.ok) {
-      const pbNd = await pbNdResp.json();
-      if (pbNd && pbNd.next_draw) {
-        const d = new Date(pbNd.next_draw + 'T12:00:00');
-        currentJackpots.pb.nextDraw = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      }
+  } catch (e) { console.warn('PB jackpot failed:', e); }
+  
+  try {
+    const pbNd = await magayoCall('next_draw.php', 'us_powerball');
+    if (pbNd && pbNd.next_draw && !pbNd.error) {
+      const d = new Date(pbNd.next_draw + 'T12:00:00');
+      currentJackpots.pb.nextDraw = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      anySuccess = true;
     }
-    // Mega Millions jackpot
-    const mmJpResp = await fetch(`https://www.magayo.com/api/jackpot.php?api_key=${MAGAYO_API_KEY}&game=us_mega_millions&format=json`);
-    if (mmJpResp.ok) {
-      const mmJp = await mmJpResp.json();
-      if (mmJp && mmJp.jackpot) {
-        currentJackpots.mm.amount = Math.round(mmJp.jackpot / 1000000);
-      }
+  } catch (e) { console.warn('PB next draw failed:', e); }
+  
+  try {
+    const mmJp = await magayoCall('jackpot.php', 'us_mega_millions');
+    if (mmJp && mmJp.jackpot && !mmJp.error) {
+      currentJackpots.mm.amount = Math.round(mmJp.jackpot / 1000000);
+      anySuccess = true;
     }
-    // Mega Millions next draw
-    const mmNdResp = await fetch(`https://www.magayo.com/api/next_draw.php?api_key=${MAGAYO_API_KEY}&game=us_mega_millions&format=json`);
-    if (mmNdResp.ok) {
-      const mmNd = await mmNdResp.json();
-      if (mmNd && mmNd.next_draw) {
-        const d = new Date(mmNd.next_draw + 'T12:00:00');
-        currentJackpots.mm.nextDraw = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      }
+  } catch (e) { console.warn('MM jackpot failed:', e); }
+  
+  try {
+    const mmNd = await magayoCall('next_draw.php', 'us_mega_millions');
+    if (mmNd && mmNd.next_draw && !mmNd.error) {
+      const d = new Date(mmNd.next_draw + 'T12:00:00');
+      currentJackpots.mm.nextDraw = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+      anySuccess = true;
     }
-    // Estimate cash values as ~46% of annuity (typical ratio)
-    currentJackpots.pb.cash = Math.round(currentJackpots.pb.amount * 0.46 * 10) / 10;
-    currentJackpots.mm.cash = Math.round(currentJackpots.mm.amount * 0.46 * 10) / 10;
-  } catch (err) {
-    console.warn('Magayo API fetch failed, using cached values:', err);
+  } catch (e) { console.warn('MM next draw failed:', e); }
+  
+  // Recalculate cash values from updated annuity amounts
+  currentJackpots.pb.cash = Math.round(currentJackpots.pb.amount * 0.46 * 10) / 10;
+  currentJackpots.mm.cash = Math.round(currentJackpots.mm.amount * 0.46 * 10) / 10;
+  
+  if (anySuccess) {
+    console.log('✅ Magayo API live data:', JSON.parse(JSON.stringify(currentJackpots)));
+  } else {
+    console.warn('❌ All Magayo API calls failed, using cached fallback values');
   }
 }
 
