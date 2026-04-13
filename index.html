@@ -1825,10 +1825,10 @@ let state = {
 
 // ==============================
 // CURRENT JACKPOT INFO
-// Auto-updated from Magayo API on page load
-// Fallback values used if API fails or key is missing
+// Fetched live from Cloudflare Worker (scrapes NC Lottery)
+// Fallback values used if worker fails
 // ==============================
-const MAGAYO_API_KEY = 'dGk8TK3tRQF7BnRAP7'; // <-- Get free key at magayo.com/lottery-feeds/sign-up/
+const WORKER_URL = 'https://magayo-proxy.fwingate3rd.workers.dev/';
 
 let currentJackpots = {
   pb: { amount: 194, cash: 87.1, nextDraw: 'Sat, Apr 11' },
@@ -1836,89 +1836,30 @@ let currentJackpots = {
 };
 
 async function fetchCurrentJackpots() {
-  if (!MAGAYO_API_KEY || MAGAYO_API_KEY === 'PASTE_YOUR_KEY_HERE') {
-    console.log('Magayo API key not set, using cached jackpot values');
-    return;
-  }
-  
-  // Try multiple CORS proxies in order — if one is down/rate-limited, the next takes over
-  const PROXIES = [
-    { url: 'https://api.allorigins.win/get?url=', wrapped: true },
-    { url: 'https://corsproxy.io/?', wrapped: false },
-    { url: 'https://proxy.cors.sh/', wrapped: false },
-    { url: 'https://api.codetabs.com/v1/proxy?quest=', wrapped: false }
-  ];
-  
-  async function magayoCall(endpoint, game) {
-    const target = `https://www.magayo.com/api/${endpoint}?api_key=${MAGAYO_API_KEY}&game=${game}&format=json`;
-    
-    for (const proxy of PROXIES) {
-      try {
-        const proxyUrl = proxy.url + encodeURIComponent(target);
-        const resp = await fetch(proxyUrl, { signal: AbortSignal.timeout(8000) });
-        if (!resp.ok) continue;
-        
-        if (proxy.wrapped) {
-          // allorigins wraps response in {contents: "..."}
-          const wrapper = await resp.json();
-          if (!wrapper.contents) continue;
-          return JSON.parse(wrapper.contents);
-        } else {
-          // Other proxies return the raw JSON directly
-          return await resp.json();
-        }
-      } catch (e) {
-        console.log(`Proxy ${proxy.url} failed for ${endpoint}/${game}:`, e.message);
-        continue;
+  try {
+    // Powerball
+    const pbResp = await fetch(`${WORKER_URL}?game=powerball`);
+    if (pbResp.ok) {
+      const pb = await pbResp.json();
+      if (pb.jackpot_millions) {
+        currentJackpots.pb.amount = pb.jackpot_millions;
+        currentJackpots.pb.cash = pb.cash_millions || Math.round(pb.jackpot_millions * 0.46 * 10) / 10;
+        if (pb.next_drawing) currentJackpots.pb.nextDraw = pb.next_drawing;
       }
     }
-    throw new Error('All proxies failed');
-  }
-  
-  let anySuccess = false;
-  
-  try {
-    const pbJp = await magayoCall('jackpot.php', 'us_powerball');
-    if (pbJp && pbJp.jackpot && !pbJp.error) {
-      currentJackpots.pb.amount = Math.round(pbJp.jackpot / 1000000);
-      anySuccess = true;
+    // Mega Millions
+    const mmResp = await fetch(`${WORKER_URL}?game=megamillions`);
+    if (mmResp.ok) {
+      const mm = await mmResp.json();
+      if (mm.jackpot_millions) {
+        currentJackpots.mm.amount = mm.jackpot_millions;
+        currentJackpots.mm.cash = mm.cash_millions || Math.round(mm.jackpot_millions * 0.46 * 10) / 10;
+        if (mm.next_drawing) currentJackpots.mm.nextDraw = mm.next_drawing;
+      }
     }
-  } catch (e) { console.warn('PB jackpot failed:', e); }
-  
-  try {
-    const pbNd = await magayoCall('next_draw.php', 'us_powerball');
-    if (pbNd && pbNd.next_draw && !pbNd.error) {
-      const d = new Date(pbNd.next_draw + 'T12:00:00');
-      currentJackpots.pb.nextDraw = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      anySuccess = true;
-    }
-  } catch (e) { console.warn('PB next draw failed:', e); }
-  
-  try {
-    const mmJp = await magayoCall('jackpot.php', 'us_mega_millions');
-    if (mmJp && mmJp.jackpot && !mmJp.error) {
-      currentJackpots.mm.amount = Math.round(mmJp.jackpot / 1000000);
-      anySuccess = true;
-    }
-  } catch (e) { console.warn('MM jackpot failed:', e); }
-  
-  try {
-    const mmNd = await magayoCall('next_draw.php', 'us_mega_millions');
-    if (mmNd && mmNd.next_draw && !mmNd.error) {
-      const d = new Date(mmNd.next_draw + 'T12:00:00');
-      currentJackpots.mm.nextDraw = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      anySuccess = true;
-    }
-  } catch (e) { console.warn('MM next draw failed:', e); }
-  
-  // Recalculate cash values from updated annuity amounts
-  currentJackpots.pb.cash = Math.round(currentJackpots.pb.amount * 0.46 * 10) / 10;
-  currentJackpots.mm.cash = Math.round(currentJackpots.mm.amount * 0.46 * 10) / 10;
-  
-  if (anySuccess) {
-    console.log('✅ Magayo API live data:', JSON.parse(JSON.stringify(currentJackpots)));
-  } else {
-    console.warn('❌ All Magayo API calls failed across all proxies, using cached fallback values');
+    console.log('✅ Live jackpots loaded:', JSON.parse(JSON.stringify(currentJackpots)));
+  } catch (err) {
+    console.warn('❌ Worker fetch failed, using cached values:', err);
   }
 }
 
